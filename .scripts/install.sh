@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SKILLS_DIR="$(pwd)"
+PLUGIN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "Installing custom skills..."
 mkdir -p "$HOME/.claude/skills"
 mkdir -p "$HOME/.cursor/skills"
 mkdir -p "$HOME/.agents/skills"
-for skill in "$DOTFILES_DIR"/skills/*/; do
+for skill in "$PLUGIN_DIR"/skills/*/; do
   [ -d "$skill" ] || continue
   name=$(basename "$skill")
   # Claude Code and Gemini CLI (agents): symlinks work
