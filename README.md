@@ -6,7 +6,26 @@ Skills are Markdown instruction files that Claude loads on demand. They encode r
 
 ## Installation
 
-Install globally (available across all projects) using `npx skills`:
+### Claude Code marketplace (recommended)
+
+Add the marketplace and install the plugin with the native Claude Code plugin system:
+
+```bash
+claude plugin marketplace add gustavofsantos/skills
+claude plugin install skills@gustavofsantos
+```
+
+Works in Claude Code CLI and Claude Desktop. Keep in sync with:
+
+```bash
+claude plugin marketplace update gustavofsantos
+```
+
+Skills are namespaced as `/gustavofsantos:<skill-name>` (e.g. `/gustavofsantos:workflow`).
+
+### npx skills (alternative)
+
+Install globally using the `npx skills` package:
 
 ```bash
 npx skills add gustavofsantos/skills -g
