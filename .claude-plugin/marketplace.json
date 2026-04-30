@@ -1,0 +1,24 @@
+{
+  "name": "gustavofsantos",
+  "description": "Gustavo Santos's personal Claude Code skills for AI-assisted engineering",
+  "owner": {
+    "name": "Gustavo Santos",
+    "email": "gustavogustav54@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "skills",
+      "source": "./",
+      "description": "Skills for AI-assisted engineering: TDD cycles, code review, knowledge management, and workflow orchestration.",
+      "author": {
+        "name": "Gustavo Santos",
+        "email": "gustavogustav54@gmail.com"
+      },
+      "homepage": "https://github.com/gustavofsantos/skills",
+      "repository": "https://github.com/gustavofsantos/skills",
+      "license": "MIT",
+      "category": "productivity",
+      "tags": ["tdd", "code-review", "knowledge-management", "workflow", "engineering"]
+    }
+  ]
+}

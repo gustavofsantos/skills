@@ -1,10 +1,12 @@
 {
   "name": "gustavofsantos",
-  "description": "My set of skills",
-  "version": "1.0.0",
+  "description": "Personal Claude Code skills for AI-assisted engineering: TDD cycles, code review, knowledge management, and daily workflow orchestration.",
   "author": {
     "name": "Gustavo Santos",
     "email": "gustavogustav54@gmail.com",
     "url": "https://gustavofsantos.com"
-  }
+  },
+  "homepage": "https://github.com/gustavofsantos/skills",
+  "repository": "https://github.com/gustavofsantos/skills",
+  "license": "MIT"
 }
