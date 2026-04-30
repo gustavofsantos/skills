@@ -81,3 +81,16 @@ The `qmd` CLI indexes this directory for semantic search. After writing any fact
 2. Add any Python scripts to `skills/<name>/scripts/`.
 3. Add any reference docs to `skills/<name>/references/`.
 4. Run `bash .scripts/install.sh` to install.
+5. Add a row to the appropriate table in `README.md` — name, link, and one-sentence description.
+
+## README consistency (required)
+
+`README.md` is the canonical index of all skills. Keep it in sync whenever skills change:
+
+- **New skill** — add a row to the correct group in the Skills table.
+- **Renamed skill** — update the row name and the link path.
+- **Deleted skill** — remove the row.
+- **Changed purpose** — update the description in the row to match the new `description` frontmatter.
+- **Moved to a different group** — move the row to the correct table.
+
+The README description for a skill should match the first sentence of its `description` frontmatter — same scope, same trigger framing. If they diverge, the README is wrong.
