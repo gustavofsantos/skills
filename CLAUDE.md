@@ -11,10 +11,10 @@ Plugin metadata lives in `.claude-plugin/plugin.json`.
 ## Installing skills
 
 ```bash
-bash .scripts/install.sh
+npx skills add ./ -g
 ```
 
-This symlinks each `skills/<name>/` directory into `~/.claude/skills/<name>` and `~/.agents/skills/<name>`, and hard-copies into `~/.cursor/skills/<name>`.
+Uses the `npx skills` package to install globally. The package discovers skills via the `skills/` directory and the `.claude-plugin/plugin.json` manifest, then symlinks them into `~/.claude/skills/`, `~/.agents/skills/`, etc.
 
 ## Repository layout
 
@@ -80,7 +80,7 @@ The `qmd` CLI indexes this directory for semantic search. After writing any fact
 1. Create `skills/<name>/SKILL.md` with frontmatter (`name`, `description`) and the instruction body.
 2. Add any Python scripts to `skills/<name>/scripts/`.
 3. Add any reference docs to `skills/<name>/references/`.
-4. Run `bash .scripts/install.sh` to install.
+4. Run `npx skills add ./ -g` to install locally.
 5. Add a row to the appropriate table in `README.md` — name, link, and one-sentence description.
 
 ## README consistency (required)

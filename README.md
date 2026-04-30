@@ -6,11 +6,31 @@ Skills are Markdown instruction files that Claude loads on demand. They encode r
 
 ## Installation
 
+Install globally (available across all projects) using `npx skills`:
+
 ```bash
-bash .scripts/install.sh
+npx skills add gustavofsantos/skills -g
 ```
 
-Symlinks each skill into `~/.claude/skills/` and `~/.agents/skills/`. Copies (not symlinks) into `~/.cursor/skills/` due to a Cursor bug with global skill symlinks.
+To install only specific skills:
+
+```bash
+npx skills add gustavofsantos/skills -g -s workflow review knowledge
+```
+
+To install from a local clone of this repo:
+
+```bash
+npx skills add ./ -g
+```
+
+**Managing installed skills:**
+
+```bash
+npx skills list -g          # list what's installed
+npx skills update -g        # pull latest versions
+npx skills remove -g        # uninstall
+```
 
 ## Skills
 
@@ -71,5 +91,5 @@ Symlinks each skill into `~/.claude/skills/` and `~/.agents/skills/`. Copies (no
 
 1. Create `skills/<name>/SKILL.md` with YAML frontmatter (`name`, `description`) and the instruction body.
 2. Add Python scripts to `skills/<name>/scripts/` and reference docs to `skills/<name>/references/` as needed.
-3. Run `bash .scripts/install.sh`.
+3. Re-run `npx skills add ./ -g` to pick up the new skill locally.
 4. Add a row to the appropriate table in this README.
