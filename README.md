@@ -106,6 +106,16 @@ npx skills remove -g        # uninstall
 |---|---|
 | [jira-context](skills/jira-context/SKILL.md) | Fetches Jira ticket context (parent, children, comments) via `acli` the moment a ticket ID or URL is mentioned. |
 
+## Development setup
+
+After cloning, install the git hooks:
+
+```bash
+bash .scripts/setup-hooks.sh
+```
+
+This installs a pre-commit hook that automatically bumps the patch version in `.claude-plugin/plugin.json` whenever you commit without manually changing the version.
+
 ## Adding a skill
 
 1. Create `skills/<name>/SKILL.md` with YAML frontmatter (`name`, `description`) and the instruction body.
