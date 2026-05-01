@@ -8,6 +8,16 @@ A Claude Code plugin containing Gustavo's personal set of skills, commands, and 
 
 Plugin metadata lives in `.claude-plugin/plugin.json`.
 
+## Remote environment setup
+
+When working in a remote or ephemeral environment (e.g. a cloud agent, CI worktree, or fresh clone), run this before starting any work:
+
+```bash
+bash .scripts/setup-hooks.sh
+```
+
+This installs git hooks from `.scripts/hooks/` into `.git/hooks/`. Without it, the pre-commit hook that auto-bumps the plugin version will not run and commits may go out with a stale version number.
+
 ## Installing skills
 
 ```bash
@@ -31,6 +41,9 @@ commands/        ← custom slash commands (currently empty placeholder)
   plugin.json    ← plugin name, version, author metadata
 .scripts/
   install.sh     ← installs all skills to ~/.claude/skills et al.
+  setup-hooks.sh ← copies hooks from .scripts/hooks/ into .git/hooks/
+  hooks/
+    pre-commit   ← auto-bumps plugin patch version on every commit
 ```
 
 ## Skill format
