@@ -171,7 +171,7 @@ but the code uses `BillingPeriod`. Omit the section entirely when names align.
 #### Claude Code
 
 ```bash
-python3 ~/.claude/skills/workflow/scripts/work-term-create.py \
+python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-term-create.py \
   --term "Ciclo de faturamento" \
   --domain financeiro \
   [--aliases "billing cycle,faturamento"]
