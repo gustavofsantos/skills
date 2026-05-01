@@ -1,0 +1,23 @@
+.claude-plugin/plugin.json
+  bae47fae82b7dad7 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "afaa5d2f6d79350bb50bfb396436ea427eb0b903",
+  "prompts": {
+    "bae47fae82b7dad7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6de40b3e-3db9-4739-9d66-7f6634787569",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Gustavo Santos",
+      "messages": [],
+      "total_additions": 74,
+      "total_deletions": 0,
+      "accepted_lines": 74,
+      "overriden_lines": 0
+    }
+  }
+}
