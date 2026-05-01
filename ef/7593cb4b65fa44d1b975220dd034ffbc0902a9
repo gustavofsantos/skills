@@ -1,0 +1,23 @@
+.scripts/setup-hooks.sh
+  c38332ab9b318ec7 17-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "ef7593cb4b65fa44d1b975220dd034ffbc0902a9",
+  "prompts": {
+    "c38332ab9b318ec7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4b9ff9b0-979a-448f-af83-a66e0549f9c4",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Gustavo Santos",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 0,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    }
+  }
+}
