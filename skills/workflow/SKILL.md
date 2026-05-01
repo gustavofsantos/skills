@@ -44,7 +44,7 @@ state file. Plan Mode handles transient session state. The issue handles everyth
 
 ## Scripts
 
-All scripts live at `~/.claude/skills/workflow/scripts/` and are invoked with `python3`.
+All scripts live in `skills/workflow/scripts/` relative to the plugin root and are invoked with `python3`.
 
 | Script | Purpose |
 |---|---|
@@ -54,7 +54,7 @@ All scripts live at `~/.claude/skills/workflow/scripts/` and are invoked with `p
 | `work-term-create.py` | Scaffold a new term (knowledge/terms) |
 
 ```bash
-SCRIPTS=~/.claude/skills/workflow/scripts
+SCRIPTS=$CLAUDE_PLUGIN_ROOT/skills/workflow/scripts
 
 python3 $SCRIPTS/work-issue-create.py --title "Fix auth bug" --status inbox
 python3 $SCRIPTS/work-issue-list.py --status active --format text
@@ -182,7 +182,7 @@ Entry points: Jira ticket, Sentry issue, verbal description, scratch idea.
 
 1. Create the issue:
    ```bash
-   python3 ~/.claude/skills/workflow/scripts/work-issue-create.py \
+   python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-create.py \
      --title "<title>" [--status inbox] [--tags feature,api] [--branch feat/slug]
    ```
 2. Fill `## Objective` — one sentence, defines done.
@@ -257,7 +257,7 @@ After review passes:
 1. Set issue status to `done`.
 2. Archive:
    ```bash
-   python3 ~/.claude/skills/workflow/scripts/work-issue-archive.py --issue 001
+   python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-archive.py --issue 001
    ```
    Moves issue to `archive/`. Spikes and facts remain — they outlive the issue.
 

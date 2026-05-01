@@ -45,7 +45,7 @@ is the only artifact — no separate tracking file is needed.
 
 1. Find the active issue:
    ```bash
-   python3 ~/.claude/skills/workflow/scripts/work-issue-list.py --status active --format text
+   python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-list.py --status active --format text
    ```
    Read the issue file at `~/engineering/issues/<id>-<slug>.md`.
 
@@ -80,7 +80,7 @@ is the only artifact — no separate tracking file is needed.
 
 **If no issue exists yet:**
 ```bash
-python3 ~/.claude/skills/workflow/scripts/work-issue-create.py --title "<title>"
+python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-create.py --title "<title>"
 ```
 
 **If no system name is clear:** ask "What system is this?" before anything else.

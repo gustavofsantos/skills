@@ -54,7 +54,7 @@ The `description` field is the trigger surface — it controls when Claude activ
 
 ## Skill conventions
 
-- **Scripts** are Python 3, invoked via `python3 ~/.claude/skills/<name>/scripts/<script>.py`. Scripts accept `--format json` (default) or `--format text` unless the script has a different interface.
+- **Scripts** are Python 3, invoked via `python3 $CLAUDE_PLUGIN_ROOT/skills/<name>/scripts/<script>.py`. `$CLAUDE_PLUGIN_ROOT` is set by the plugin system to the plugin's installation directory — skills reference only the path relative to that root, never a hardcoded install location. Scripts accept `--format json` (default) or `--format text` unless the script has a different interface.
 - **References** are markdown files the skill explicitly `Read`s at runtime — they are not auto-loaded. The skill SKILL.md must name which references to load and when.
 - Skills are designed to be invoked from Claude Code (bash tool available) or Claude Desktop (no bash tool). Skills that use bash must detect the environment and fall back gracefully for Desktop.
 - The `workflow` skill is the orchestrator — it coordinates all other skills. New issues, session starts, and context recovery all route through it first.

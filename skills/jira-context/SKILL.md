@@ -7,7 +7,7 @@ description: |
   - User mentions ONE ticket/URL → run script for it (auto-fetches parent + all children in parallel)
   - User mentions multiple tickets → run script for each in parallel
 
-  COMMAND: python3 ~/.claude/skills/jira-context/scripts/jira-ticket-context.py [TICKET-ID-OR-URL ...]
+  COMMAND: python3 $CLAUDE_PLUGIN_ROOT/skills/jira-context/scripts/jira-ticket-context.py [TICKET-ID-OR-URL ...]
 ---
 
 # Jira Context Skill
@@ -23,8 +23,8 @@ description: |
 ## Command
 
 ```bash
-python3 ~/.claude/skills/jira-context/scripts/jira-ticket-context.py PROJ-1234
-python3 ~/.claude/skills/jira-context/scripts/jira-ticket-context.py https://your-org.atlassian.net/browse/PROJ-1234
+python3 $CLAUDE_PLUGIN_ROOT/skills/jira-context/scripts/jira-ticket-context.py PROJ-1234
+python3 $CLAUDE_PLUGIN_ROOT/skills/jira-context/scripts/jira-ticket-context.py https://your-org.atlassian.net/browse/PROJ-1234
 ```
 
 ## What the script does automatically
