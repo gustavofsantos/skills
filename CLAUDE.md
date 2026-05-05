@@ -90,7 +90,7 @@ Skills operate against `~/engineering/` — a separate directory that is the use
   facts/           ← atomic knowledge facts (see knowledge skill)
   spikes/          ← investigation narratives (see dead-reckoning skill)
   terms/<domain>/  ← business domain term definitions (see knowledge skill)
-  .counters/       ← sequential ID files: facts, spikes, terms
+  .counters/       ← sequential ID files: issues, facts, spikes, terms
 ```
 
 The `qmd` CLI indexes this directory for semantic search. After writing any fact, spike, or term: `qmd update && qmd embed`.
