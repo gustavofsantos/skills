@@ -117,7 +117,7 @@ The agent never sets status to `done` unilaterally. That is the human's action a
 | Implementation with new behavior | `test-design` → `tdd-design` |
 | Design choice feels coupled or tangled | `thinking-lenses` (Braided) |
 | Bug keeps recurring or fix feels like a patch | `thinking-lenses` (Iceberg) |
-| Review before PR | `review` |
+| Review before PR | `deep-review` |
 | Code smell or duplication found | `incremental-refactor` constraints (in issue Context) |
 | New feature, unsure where to start | `evolutionary-design` constraints (in issue Context) |
 
@@ -229,7 +229,7 @@ When resuming after any interruption:
 
 ## Phase 3 — Reviewing an issue
 
-When all tasks are complete, invoke `review` skill.
+When all tasks are complete, invoke `deep-review` skill.
 
 After review passes:
 1. Human sets status to `done`.
