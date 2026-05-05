@@ -1,13 +1,16 @@
 ---
-name: jira-context
-description: |
-  Fetches Jira ticket context via acli. RUN IMMEDIATELY when user mentions any ticket ID (e.g., PROJ-1234) or Jira URL.
-
-  QUICK DECISION:
-  - User mentions ONE ticket/URL → run script for it (auto-fetches parent + all children in parallel)
-  - User mentions multiple tickets → run script for each in parallel
-
-  COMMAND: python3 $CLAUDE_PLUGIN_ROOT/skills/jira-context/scripts/jira-ticket-context.py [TICKET-ID-OR-URL ...]
+description: >
+  Fetches Jira ticket context via acli — parent, children, and comments — the moment a
+  ticket ID or URL appears in the conversation.
+when_to_use: >
+  Run immediately when user mentions any ticket ID (e.g., PROJ-1234) or Jira URL. One ticket →
+  run the script (auto-fetches parent + all children in parallel). Multiple tickets → run each
+  in parallel. Do NOT ask — just run.
+argument-hint: <TICKET-ID-OR-URL> [more...]
+arguments: [tickets]
+context: fork
+agent: Explore
+allowed-tools: Bash(python3:*) Bash(acli:*)
 ---
 
 # Jira Context Skill

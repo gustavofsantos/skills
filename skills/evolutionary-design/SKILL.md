@@ -1,12 +1,10 @@
 ---
-name: evolutionary-design
 description: >
-  Provides design constraints for building new features or systems incrementally.
-  Use this skill when the user is starting a new feature, module, or integration and
-  wants to avoid big-bang design. In Claude Code sessions, this skill produces a
-  constraint block to paste into the card's Context section — not an interactive
-  protocol. Trigger on phrases like "where do I start", "how should I structure this",
-  "let's build X", "I need to add Y", or any greenfield work.
+  Produces design constraints for building new features or systems incrementally, avoiding
+  big-bang design via a tracer-bullet approach.
+when_to_use: >
+  Use when starting a new feature, module, or integration. Triggers on "where do I start",
+  "how should I structure this", "let's build X", "I need to add Y", or any greenfield work.
 ---
 
 # Evolutionary Design

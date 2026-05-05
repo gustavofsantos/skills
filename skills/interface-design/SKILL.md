@@ -1,13 +1,13 @@
 ---
-name: interface-design
 description: >
-  Apply Go-derived interface design principles to design or review abstractions in any language.
-  Use this skill whenever the agent is about to define an interface, protocol, trait, abstract class,
-  or any abstraction boundary — or when reviewing one that already exists. Triggers on phrases like
-  "design an interface", "create an abstraction", "define a contract", "what should this interface
-  look like", "model this as a protocol/trait", "review this interface", "is this a good abstraction",
-  or any time the agent introduces a new type boundary between components. Covers Go, Clojure, Java,
-  Kotlin, TypeScript, and Python.
+  Applies Go-derived interface design principles to design or review abstractions in any language —
+  Go, Clojure, Java, Kotlin, TypeScript, and Python.
+when_to_use: >
+  Use when about to define an interface, protocol, trait, abstract class, or any abstraction
+  boundary, or when reviewing one that already exists. Triggers on "design an interface", "create
+  an abstraction", "define a contract", "what should this interface look like", "model this as a
+  protocol/trait", "review this interface", "is this a good abstraction", or any time introducing
+  a new type boundary between components.
 ---
 
 # Interface Design Skill

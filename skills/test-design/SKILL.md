@@ -1,14 +1,14 @@
 ---
-name: test-design
 description: >
   Collaborative specification protocol to define the behavioral contract of a unit before
-  any code is written. Use this skill when the user wants to think through what to test
-  before implementing anything. Trigger on phrases like "let's figure out what to test",
-  "before we write anything", "what should we cover for X", "help me think through the
-  tests for Y", or when the user describes a feature and hasn't mentioned implementation
-  yet. Also trigger when the user asks Claude to implement something non-trivial and no
-  test plan exists — propose running this protocol first before jumping to tdd-design.
-  The output is a behavioral contract artifact that feeds tdd-design.
+  any code is written.
+when_to_use: >
+  Use when the user wants to think through what to test before implementing. Triggers on
+  "let's figure out what to test", "before we write anything", "what should we cover for X",
+  "help me think through the tests for Y", or when a feature is described with no test plan.
+  Also trigger when asked to implement something non-trivial with no test plan — propose this
+  protocol first. The output is a behavioral contract artifact that feeds tdd-design.
+allowed-tools: Read Edit Bash(rg:*) Bash(fd:*)
 ---
 
 # Test Design Protocol

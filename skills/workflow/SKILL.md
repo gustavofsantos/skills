@@ -1,12 +1,15 @@
 ---
-name: workflow
 description: >
-  Protocol for managing daily engineering work. The orchestrator skill — coordinates
-  all other skills across the three phases of work: planning, execution, and review.
+  Protocol for managing daily engineering work — the orchestrator that coordinates all other
+  skills across planning, execution, and review phases.
+when_to_use: >
   Use whenever the user mentions an issue, starts a task, wants to know what's in progress,
-  needs context recovery, or says things like "new issue", "start a session", "what are
-  we working on", "recall", "continue", "create an issue for X", or "let's work on X".
-  This skill is the entry point. It decides which other skills to invoke.
+  needs context recovery, or says things like "new issue", "start a session", "what are we
+  working on", "recall", "continue", "create an issue for X", or "let's work on X".
+  This skill is the entry point — it decides which other skills to invoke.
+argument-hint: [action] [issue-id]
+arguments: [action, issue_id]
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(cat:*) Bash(qmd:*) Bash(git:*)
 ---
 
 # Workflow

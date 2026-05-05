@@ -1,6 +1,13 @@
 ---
-name: user-story-planner
-description: "Use this skill whenever the user has a user story ready and needs to break it down into development tasks for an agent to execute. Triggers on phrases like \"quebra essa história em tasks\", \"quais são as tasks dessa história\", \"define as tasks para\", \"como implementar essa história\", or any situation where a user story exists and the next step is defining what the agent should do and in what order. Always use this skill before starting implementation of a user story."
+description: >
+  Breaks a ready user story into scoped development tasks with clear done criteria for agent
+  execution.
+when_to_use: >
+  Use whenever a user story is ready and needs to be broken into development tasks. Triggers on
+  "quebra essa história em tasks", "quais são as tasks dessa história", "define as tasks para",
+  "como implementar essa história", or when a user story exists and the next step is defining
+  what the agent should do and in what order. Always use before starting implementation.
+allowed-tools: Read Write Edit
 ---
  
 # Story Task Planner

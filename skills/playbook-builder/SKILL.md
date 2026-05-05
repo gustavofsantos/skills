@@ -1,14 +1,15 @@
 ---
-name: playbook-builder
 description: >
-  Create structured test playbooks for validating features in any environment —
-  local, staging, or production. Use whenever documenting how to test an existing
-  feature, stabilizing legacy behavior for automated agent validation, converting
-  a dead-reckoning spike or test-design contract into an executable playbook, or
-  when the user says "cria um playbook", "documenta como testar", "quero um
-  roteiro de teste", "how do I validate X", or "turn this into a playbook".
-  Always invoke this skill before writing any playbook file — never write playbook
-  markdown directly without following this protocol.
+  Creates structured test playbooks for validating features in any environment — local,
+  staging, or production.
+when_to_use: >
+  Use when documenting how to test an existing feature, stabilizing legacy behavior for
+  automated agent validation, converting a dead-reckoning spike or test-design contract into
+  an executable playbook, or when the user says "cria um playbook", "documenta como testar",
+  "quero um roteiro de teste", "how do I validate X", or "turn this into a playbook". Always
+  invoke before writing any playbook file — never write playbook markdown directly without
+  following this protocol.
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(qmd:*)
 ---
 
 # Playbook Builder

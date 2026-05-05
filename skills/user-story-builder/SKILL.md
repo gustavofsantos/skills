@@ -1,6 +1,13 @@
 ---
-name: user-story-builder
-description: "Use this skill whenever the user describes a problem, feature request, or task they want to implement and needs to turn it into a well-structured user story. Triggers on phrases like \"quero implementar\", \"preciso de uma história de usuário\", \"monta uma story para\", \"tenho um problema que\", or any situation where the user presents a raw idea or problem that needs to be formalized as a user story before development begins. Always use this skill before writing acceptance criteria, defining scope, or initiating a development session."
+description: >
+  Turns a raw problem or idea into a well-structured user story with acceptance criteria.
+when_to_use: >
+  Use whenever the user describes a problem, feature request, or task they want to implement
+  and needs to turn it into a user story. Triggers on "quero implementar", "preciso de uma
+  história de usuário", "monta uma story para", "tenho um problema que", or any raw idea that
+  needs formalization before development begins. Always use before writing acceptance criteria,
+  defining scope, or initiating a development session.
+allowed-tools: Read Write Edit
 ---
  
 # User Story Builder
