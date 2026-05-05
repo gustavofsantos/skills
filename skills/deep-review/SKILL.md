@@ -23,6 +23,10 @@ The goal of Phase 2 is: is the core logic well-designed?
 
 ## Entry points
 
+If invoked with `$ARGUMENTS` (e.g. `/deep-review main..feature` or `/deep-review src/auth.clj`),
+use the argument as the review target and skip the clarification step. Otherwise ask the user
+what to review before proceeding.
+
 **Branch diff** (most common):
 ```bash
 BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||' \

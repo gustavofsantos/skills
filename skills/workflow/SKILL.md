@@ -49,55 +49,7 @@ state file. Plan Mode handles transient session state. The issue handles everyth
 
 ## Issue format
 
-```markdown
----
-id: "001"
-title: "Fix auth bug"
-status: inbox | not-now | active | done
-branch: feat/fix-auth
-tags: [feature, api]
-created: 2026-04-27
-updated: 2026-04-27
----
-
-## Objective
-
-One sentence. What "done" looks like when this issue closes.
-
-## Scope
-
-**In:** what is explicitly included.
-**Off-limits:** what will not be touched and why.
-
-## Context
-
-Relevant background. Links to Jira, Sentry, docs, prior decisions.
-If design constraints apply (evolutionary-design, incremental-refactor),
-state them here as named constraints — not as prose.
-
-## Open questions
-
-- [ ] ?
-
-## Tasks
-
-- [ ] Task 1
-- [ ] Task 2 abc1234
-
----
-
-### Facts
-- [[FACT-007-auth-token-refresh-window]]
-
-### Spikes
-- [[001-auth-investigation]]
-```
-
-**Valid statuses:** `inbox` `not-now` `active` `done`
-
-**`branch`** — optional. When present, used to locate worktree context.
-**`### Facts`** — wiki links to facts in `~/engineering/facts/` relevant to this issue.
-**`### Spikes`** — wiki links to spike narratives in `~/engineering/spikes/`.
+See [references/issue-template.md](references/issue-template.md) for the canonical template with field reference.
 
 ---
 

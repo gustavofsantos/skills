@@ -24,10 +24,8 @@ and written to whenever a validated fact is discovered.
 
 Before any operation, determine which environment you are running in:
 
-- **Claude Code**: bash tool is available. Use CLI commands and direct file access for
-  all operations. This is the full-capability path.
-- **Claude Desktop**: no bash tool. Use the qmd MCP server for queries. Fact writes
-  require generating the markdown for the user to save manually — state this clearly.
+- **Claude Code**: bash tool is available — use CLI commands and direct file access.
+- **Claude Desktop**: no bash tool — see [references/desktop-mode.md](references/desktop-mode.md) for all fallback procedures.
 
 To check: attempt to use the bash tool. If unavailable, you are on Claude Desktop.
 
@@ -62,43 +60,7 @@ Terms are scoped by business domain, not by project or codebase.
 
 ## Fact format
 
-<fact>
----
-id: FACT-NNN
-title: "Short label — what this fact says"
-confidence: asserted | validated
-created: YYYY-MM-DD
-confirmed: YYYY-MM-DD
-tags: [auth, clojure, seubarriga]
----
-
-## Statement
-
-One paragraph. Plain language. Behavioral claim, not code description.
-What is true, not how it is implemented.
-
-## Evidence
-
-What anchors this fact. File and line, commit hash, or test name.
-Prefer commit hash over file:line — a changed hash signals staleness.
-
-## Depends on
-
-- [[FACT-NNN-slug]] (if this fact builds on another)
-
-## Notes
-
-Optional. Caveats, edge cases, conditions under which this might not hold.
-
----
-
-### Refs:
-- [Reference to other documents or external information]
-- spike: [[001-auth-investigation]]
-- issue: [[007-auth-investigation]]
-- commit: abc1234
-...
-</fact>
+For the canonical fact format (YAML frontmatter + section structure), read [references/formats.md](references/formats.md).
 
 **Confidence levels:**
 - `asserted` — stated by the human as external truth. Not yet verified in code.
@@ -145,33 +107,7 @@ A term without a `## Referências` entry is valid — it defines the concept for
 
 ### Term format
 
-<term>
----
-id: TERM-NNN
-term: "Nome do conceito"
-domain: financeiro
-aliases: []
----
-
-## Definição
-
-## No código
-
-<!-- Só preencher se o nome no código divergir do nome de negócio. Omitir a seção caso contrário. -->
-
-## Não é
-
----
-
-## Referências
-
-- [[FACT-NNN-slug]]
-- [[TERM-NNN-slug]]
-</term>
-
-The `## No código` section is optional. Include it only when the name used in code
-diverges from the business name — e.g., the domain calls it "Ciclo de faturamento"
-but the code uses `BillingPeriod`. Omit the section entirely when names align.
+For the canonical term format (YAML frontmatter + section structure), read [references/formats.md](references/formats.md).
 
 ### Creating a term
 
@@ -209,15 +145,14 @@ qmd query $'lex: auth token\nvec: token refresh before expiry check' -n 5
 # Exact keyword / ID lookup
 qmd search "FACT-007" --full
 
-# Read a specific fact (when you know the ID)
-cat ~/engineering/facts/FACT-007-*.md
+# Read a specific fact by ID
+fd '^FACT-007.*\.md$' ~/engineering/facts -d 1
 ```
 
 ### Claude Desktop (qmd MCP server)
 
-Use the qmd MCP server tools directly. The server exposes search and retrieval
-over the same collection. Use it for queries at session start and during investigation.
-Fact writes are not available via MCP — see "Creating a fact" below.
+See [references/desktop-mode.md](references/desktop-mode.md) for the full procedure.
+Use the `qmd` MCP server tools for queries. Fact writes are not available via MCP.
 
 ---
 
@@ -241,42 +176,18 @@ Fact writes are not available via MCP — see "Creating a fact" below.
    FILE=~/engineering/facts/${ID}-${SLUG}.md
    ```
 
-3. Write the scaffolded file:
-   ```bash
-   cat > "$FILE" << 'EOF'
-   ---
-   id: FACT-NNN
-   title: ""
-   confidence: asserted
-   created: YYYY-MM-DD
-   tags: []
-   refs: []
-   ---
-
-   ## Statement
-
-   ## Evidence
-
-   ## Depends on
-
-   ## Notes
-   EOF
-   ```
-   Then fill in the body.
+3. Write `$FILE` using the Write tool with the canonical format from [references/formats.md](references/formats.md) — substitute `{id}`, `{title}`, `{today}`. Fill body sections.
 
 4. Index:
    ```bash
    qmd update && qmd embed
    ```
 
-5. Add the wiki link to the originating issue's `facts:` field.
+5. Add the wiki link to the originating issue's `### Facts` section.
 
 ### Claude Desktop
 
-Fact writes require filesystem access. Generate the complete markdown in chat using
-the format above, state clearly that the user must save it to
-`~/engineering/facts/FACT-NNN-<slug>.md` with the correct sequential ID, and then
-run `qmd update && qmd embed` in a terminal to index it.
+See [references/desktop-mode.md](references/desktop-mode.md).
 
 ---
 
@@ -284,22 +195,18 @@ run `qmd update && qmd embed` in a terminal to index it.
 
 ### Claude Code
 
-To update front-matter fields without touching the body, use `sed` or read-modify-write:
-
-Use the Read tool to read the file, then Edit to update the frontmatter field:
+Locate the file:
 ```bash
 FILE=$(fd '^FACT-007.*\.md$' ~/engineering/facts -d 1)
 ```
-Then apply changes with the Edit tool and run `qmd update && qmd embed`.
-
-To update the body, read the file and rewrite it.
-
-After any write: `qmd update && qmd embed`
+Use Read to load it, then Edit to update frontmatter or body. After any write:
+```bash
+qmd update && qmd embed
+```
 
 ### Claude Desktop
 
-Read via qmd MCP server. For writes, generate the updated markdown and instruct
-the user to apply it.
+See [references/desktop-mode.md](references/desktop-mode.md).
 
 ---
 
@@ -313,8 +220,7 @@ When `dead-reckoning` produces a confirmed theorem:
    then `qmd update && qmd embed`. In the spike document, replace the full theorem text
    with `→ [[FACT-NNN-slug]]`.
 
-3. **Claude Desktop** — generate the full fact markdown with `confidence: validated`,
-   instruct the user to save it and run `qmd update && qmd embed`.
+3. **Claude Desktop** — see [references/desktop-mode.md](references/desktop-mode.md).
 
 ---
 
@@ -332,8 +238,7 @@ qmd update && qmd embed
 
 ### Claude Desktop
 
-Generate the updated markdown with `confidence: invalidated` and an `## Invalidated`
-section. Instruct the user to apply and index it.
+See [references/desktop-mode.md](references/desktop-mode.md).
 
 Do not delete invalidated facts. The history of what was believed is useful.
 Identify any facts that `## Depends on` the invalidated one and review them.
@@ -352,8 +257,7 @@ Load results above score 0.5. Ignore the rest.
 
 ### Claude Desktop
 
-Use the qmd MCP server query tool with the issue title and objective as the query.
-Same threshold: load above 0.5, ignore the rest.
+See [references/desktop-mode.md](references/desktop-mode.md).
 
 ---
 
