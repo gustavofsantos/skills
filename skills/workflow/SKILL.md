@@ -1,15 +1,28 @@
 ---
-name: workflow
 description: >
-  Protocol for managing daily engineering work. The orchestrator skill — coordinates
-  all other skills across the three phases of work: planning, execution, and review.
+  Protocol for managing daily engineering work — the orchestrator that coordinates all other
+  skills across planning, execution, and review phases.
+when_to_use: >
   Use whenever the user mentions an issue, starts a task, wants to know what's in progress,
-  needs context recovery, or says things like "new issue", "start a session", "what are
-  we working on", "recall", "continue", "create an issue for X", or "let's work on X".
-  This skill is the entry point. It decides which other skills to invoke.
+  needs context recovery, or says things like "new issue", "start a session", "what are we
+  working on", "recall", "continue", "create an issue for X", or "let's work on X".
+  This skill is the entry point — it decides which other skills to invoke.
+argument-hint: [action] [issue-id]
+arguments: [action, issue_id]
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(cat:*) Bash(qmd:*) Bash(git:*)
 ---
 
 # Workflow
+
+## Currently active issues
+
+!`rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null || echo '(none active)'`
+
+## Inbox count
+
+!`rg -l '^status: inbox$' ~/engineering/issues -g '*.md' 2>/dev/null | wc -l | tr -d ' '`
+
+---
 
 One abstraction. One source of truth.
 
@@ -36,62 +49,18 @@ state file. Plan Mode handles transient session state. The issue handles everyth
 
 ## Issue format
 
-```markdown
----
-id: "001"
-title: "Fix auth bug"
-status: inbox | not-now | active | done
-branch: feat/fix-auth
-tags: [feature, api]
-created: 2026-04-27
-updated: 2026-04-27
----
-
-## Objective
-
-One sentence. What "done" looks like when this issue closes.
-
-## Scope
-
-**In:** what is explicitly included.
-**Off-limits:** what will not be touched and why.
-
-## Context
-
-Relevant background. Links to Jira, Sentry, docs, prior decisions.
-If design constraints apply (evolutionary-design, incremental-refactor),
-state them here as named constraints — not as prose.
-
-## Open questions
-
-- [ ] ?
-
-## Tasks
-
-- [ ] Task 1
-- [ ] Task 2 abc1234
-
----
-
-### Facts
-- [[FACT-007-auth-token-refresh-window]]
-
-### Spikes
-- [[001-auth-investigation]]
-```
-
-**Valid statuses:** `inbox` `not-now` `active` `done`
-
-**`branch`** — optional. When present, used to locate worktree context.
-**`### Facts`** — wiki links to facts in `~/engineering/facts/` relevant to this issue.
-**`### Spikes`** — wiki links to spike narratives in `~/engineering/spikes/`.
+See [references/issue-template.md](references/issue-template.md) for the canonical template with field reference.
 
 ---
 
 ## Issue management
 
-**Creating an issue:** determine the next ID by listing `~/engineering/issues/` and
-incrementing the highest existing number. Create the file directly.
+**Creating an issue:**
+
+1. Read `~/engineering/.counters/issues` (treat as `0` if absent). Increment and write back (zero-pad to 3 digits).
+2. Slugify the title (lowercase, hyphens, max 5 words).
+3. Write `~/engineering/issues/<NNN>-<slug>.md` — use the template in `references/issue-template.md`.
+4. Confirm: "Created issue <NNN>: <title>."
 
 **Archiving an issue:** move the file to `~/engineering/issues/archive/`. Spikes and
 facts are not moved — they outlive the issue.
@@ -117,7 +86,7 @@ The agent never sets status to `done` unilaterally. That is the human's action a
 | Implementation with new behavior | `test-design` → `tdd-design` |
 | Design choice feels coupled or tangled | `thinking-lenses` (Braided) |
 | Bug keeps recurring or fix feels like a patch | `thinking-lenses` (Iceberg) |
-| Review before PR | `review` |
+| Review before PR | `deep-review` |
 | Code smell or duplication found | `incremental-refactor` constraints (in issue Context) |
 | New feature, unsure where to start | `evolutionary-design` constraints (in issue Context) |
 
@@ -229,7 +198,7 @@ When resuming after any interruption:
 
 ## Phase 3 — Reviewing an issue
 
-When all tasks are complete, invoke `review` skill.
+When all tasks are complete, invoke `deep-review` skill.
 
 After review passes:
 1. Human sets status to `done`.

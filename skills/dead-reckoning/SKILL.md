@@ -1,18 +1,19 @@
 ---
-name: dead-reckoning
 description: >
-  Structured analysis partner for complex legacy codebases. Use when the user wants to
-  understand existing behavior, trace a call tree, investigate a bug, or answer a
-  specific architectural question in a system that is hard to read (Clojure, verbose
-  Java, Kotlin monorepos, or any poorly structured codebase). This skill drives the
-  traversal session — enforcing a central question, managing a living knowledge base
-  of facts and spikes, producing explicit coverage evidence, and finalizing a spike
-  document at the end. The human validates; the agent traverses and translates.
-  Activate on phrases like "analisa esse código", "quero entender como funciona",
-  "como isso está implementado", "me ajuda a traçar", "trace this call",
-  "how is this built", "what does X do in production", or any request to investigate
-  existing code before making a decision or raising a PR. Do not use for greenfield
-  design or planning without a codebase — use thinking-partner for that.
+  Structured analysis partner for tracing behavior, investigating bugs, and answering
+  architectural questions in complex or legacy codebases.
+when_to_use: >
+  Use when understanding existing behavior, tracing a call tree, investigating a bug, or
+  answering a specific architectural question in a system that is hard to read (Clojure,
+  verbose Java, Kotlin monorepos, or any poorly structured codebase). Triggers on "analisa
+  esse código", "quero entender como funciona", "como isso está implementado", "me ajuda a
+  traçar", "trace this call", "how is this built", "what does X do in production", or any
+  request to investigate existing code before making a decision or raising a PR. Do not use
+  for greenfield design or planning without a codebase — use thinking-partner for that.
+argument-hint: [issue-id]
+arguments: [issue_id]
+effort: high
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(qmd:*) Bash(git:*) Bash(cat:*)
 ---
 
 # Dead Reckoning — Legacy Analysis
@@ -41,13 +42,14 @@ the traversal proceeds — candidates are marked `(candidate)` until the human c
 When Plan Mode is active, it provides phase tracking. Without Plan Mode, the spike itself
 is the only artifact — no separate tracking file is needed.
 
+## Active issue at session start
+
+!`rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1`
+
 ## Session start
 
-1. Find the active issue:
-   ```bash
-   python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-list.py --status active --format text
-   ```
-   Read the issue file at `~/engineering/issues/<id>-<slug>.md`.
+1. Read the file returned above at `~/engineering/issues/<id>-<slug>.md`. If the injection
+   returned nothing, ask the user which issue to work on or create one (see recipe below).
 
 2. Probe whether Plan Mode is warranted. Before doing anything else, assess the scope
    of the investigation from the central question and any context already given:
@@ -79,9 +81,12 @@ is the only artifact — no separate tracking file is needed.
    > for this session, or do you want to verify it fresh?"
 
 **If no issue exists yet:**
-```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-create.py --title "<title>"
-```
+
+1. Read `~/engineering/.counters/issues` (or treat as `0` if absent).
+2. `next = current + 1`; write it back to `~/engineering/.counters/issues` (zero-padded to 3 digits).
+3. Slugify the title (lowercase, hyphens, max 5 words).
+4. Write `~/engineering/issues/<NNN>-<slug>.md` using the template in `skills/workflow/references/issue-template.md`.
+5. Confirm: "Created issue <NNN>: <title>."
 
 **If no system name is clear:** ask "What system is this?" before anything else.
 

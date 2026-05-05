@@ -1,12 +1,12 @@
 ---
-name: incremental-refactor
 description: >
-  Provides constraints for safe, incremental refactoring. Use when the user wants
-  to clean up code, remove duplication, extract a concept, or improve structure
-  without changing behavior. In Claude Code sessions, produces a constraint block
-  for the card's Context section. Trigger on phrases like "refactor this",
-  "clean this up", "there's duplication here", "this feels wrong", "extract this",
-  or when code has structural problems identified during review.
+  Produces constraints for safe, incremental refactoring — behavior-preserving steps, one
+  transformation at a time, no scope expansion.
+when_to_use: >
+  Use when cleaning up code, removing duplication, extracting a concept, or improving structure
+  without changing behavior. Triggers on "refactor this", "clean this up", "there's duplication
+  here", "this feels wrong", "extract this", or when code has structural problems identified
+  during review.
 ---
 
 # Incremental Refactoring

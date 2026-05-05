@@ -1,13 +1,12 @@
 ---
-name: shameless-green
 description: >
-  Apply Shameless Green — write the simplest, most obvious code that makes tests pass,
-  without worrying about elegance, abstraction, or duplication. Use this skill during the
-  GREEN phase of TDD, when the user is trying to make a failing test pass, when writing
-  the first implementation of anything, or when the user is overthinking the design before
-  having working code. Trigger when the user says "how should I implement this cleanly",
-  "what's the best abstraction here", or starts designing structure before having a passing
-  test. Redirect them: make it work first, make it clean after.
+  Redirects to the simplest, most obvious code that makes a failing test pass during the GREEN
+  phase of TDD — make it work first, make it clean after.
+when_to_use: >
+  Use during the GREEN phase of TDD when the user is trying to make a failing test pass, when
+  writing the first implementation of anything, or when overthinking design before having working
+  code. Triggers on "how should I implement this cleanly", "what's the best abstraction here",
+  or when the user starts designing structure before having a passing test.
 ---
 
 # Shameless Green
