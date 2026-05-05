@@ -15,10 +15,10 @@ for hook in "$HOOKS_SRC"/*; do
 done
 echo "Installing git hooks... OK"
 
-echo "Installing git-ai CLI..."
-if command -v git-ai &>/dev/null; then
-  echo "  git-ai already installed, skipping"
-else
-  curl -sSL https://usegitai.com/install.sh | bash
-  echo "Installing git-ai CLI... OK"
-fi
+# echo "Installing git-ai CLI..."
+# if command -v git-ai &>/dev/null; then
+#   echo "  git-ai already installed, skipping"
+# else
+#   curl -sSL https://usegitai.com/install.sh | bash
+#   echo "Installing git-ai CLI... OK"
+# fi
