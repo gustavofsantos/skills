@@ -286,14 +286,11 @@ run `qmd update && qmd embed` in a terminal to index it.
 
 To update front-matter fields without touching the body, use `sed` or read-modify-write:
 
+Use the Read tool to read the file, then Edit to update the frontmatter field:
 ```bash
-# Read the fact
-cat ~/engineering/facts/FACT-007-*.md
-
-# Edit in place (example: set confidence to validated)
-FILE=$(ls ~/engineering/facts/FACT-007-*.md)
-# Use your preferred editor or sed to update the YAML front-matter field
+FILE=$(fd '^FACT-007.*\.md$' ~/engineering/facts -d 1)
 ```
+Then apply changes with the Edit tool and run `qmd update && qmd embed`.
 
 To update the body, read the file and rewrite it.
 
@@ -326,9 +323,10 @@ When `dead-reckoning` produces a confirmed theorem:
 ### Claude Code
 
 ```bash
-FILE=$(ls ~/engineering/facts/FACT-007-*.md)
-# Update confidence: invalidated in front-matter
-# Append an ## Invalidated section with date and reason
+FILE=$(fd '^FACT-007.*\.md$' ~/engineering/facts -d 1)
+```
+Use Read to load the file, Edit to set `confidence: invalidated` in frontmatter and append an `## Invalidated` section, then:
+```bash
 qmd update && qmd embed
 ```
 
