@@ -26,25 +26,22 @@ state file. Plan Mode handles transient session state. The issue handles everyth
 ~/engineering/
   issues/
     001-fix-auth-bug.md
-    archive/            <- completed issues — never read these
-  facts/                <- managed by the knowledge skill
-  spikes/               <- managed by the knowledge skill
-  terms/                <- managed by the knowledge skill
-    financeiro/
-    fretboard/
-  thinking/             <- managed by the thinking-partner skill
+    archive/            ← completed issues — never read these
+  facts/                ← managed by the knowledge skill
+  spikes/               ← managed by the knowledge skill
+  terms/                ← managed by the thinking-partner skill
 ```
 
 ---
 
-## Issue schema
+## Issue format
 
-<issue>
+```markdown
 ---
 id: "001"
 title: "Fix auth bug"
 status: inbox | not-now | active | done
-branch: feat/fix-auth          # optional — used for worktree context
+branch: feat/fix-auth
 tags: [feature, api]
 created: 2026-04-27
 updated: 2026-04-27
@@ -67,15 +64,12 @@ state them here as named constraints — not as prose.
 
 ## Open questions
 
-Questions that must be answered before or during execution.
-If non-empty when work begins, consider dead-reckoning before writing tasks.
-
 - [ ] ?
 
 ## Tasks
 
 - [ ] Task 1
-- [ ] Task 2
+- [ ] Task 2 abc1234
 
 ---
 
@@ -84,21 +78,31 @@ If non-empty when work begins, consider dead-reckoning before writing tasks.
 
 ### Spikes
 - [[001-auth-investigation]]
-
-</issue>
+```
 
 **Valid statuses:** `inbox` `not-now` `active` `done`
 
-**On task completion:** agent marks the task `[x]` and updates `updated:` in frontmatter.
+**`branch`** — optional. When present, used to locate worktree context.
+**`### Facts`** — wiki links to facts in `~/engineering/facts/` relevant to this issue.
+**`### Spikes`** — wiki links to spike narratives in `~/engineering/spikes/`.
 
-**On issue completion:** when all tasks are `[x]`, agent signals:
+---
+
+## Issue management
+
+**Creating an issue:** determine the next ID by listing `~/engineering/issues/` and
+incrementing the highest existing number. Create the file directly.
+
+**Archiving an issue:** move the file to `~/engineering/issues/archive/`. Spikes and
+facts are not moved — they outlive the issue.
+
+**On task completion:** mark the task `[x]`, append the short commit hash inline, and
+update `updated:` in frontmatter.
+
+**On issue completion:** when all tasks are `[x]`, signal:
 > "All tasks complete. Ready for review."
 
 The agent never sets status to `done` unilaterally. That is the human's action after review.
-
-**`facts`** — wiki links to facts in `~/engineering/facts/` relevant to this issue.
-**`spikes`** — wiki links to spike narratives in `~/engineering/spikes/`.
-**`branch`** — optional. When present, used to locate worktree context and filter knowledge retrieval.
 
 ---
 
@@ -124,7 +128,7 @@ The agent never sets status to `done` unilaterally. That is the human's action a
 Run at the start of every session, silently, before any other action:
 
 ```bash
-qmd query "<issue title> <issue objective>" --min-score 0.5 -n 8 --files
+qmd query "<issue title> <issue objective>" --min-score 0.5 -n 8
 ```
 
 Load returned facts and spike excerpts into working context.
@@ -137,18 +141,13 @@ If something surfaces that the human hasn't mentioned:
 If a loaded fact contradicts something in the issue's Context: surface it immediately
 before any execution begins.
 
-Then run a second query targeting terms for the relevant domain. Infer the domain from
-the issue's tags, context, or the active card's subject matter:
+Then run a second query targeting terms for the relevant domain:
 
 ```bash
-qmd query "<domain> <key concepts from objective>" --min-score 0.5 -n 5 --files
+qmd query "<domain> <key concepts from objective>" --min-score 0.5 -n 5
 ```
 
-Filter results to `~/engineering/terms/`. If a term surfaces that the human hasn't
-mentioned and is directly relevant to the objective, surface it the same way as facts:
-
-> "Before we start — [[TERM-003-ciclo-de-faturamento]] defines what a billing cycle
-> means in this domain. Worth keeping in mind."
+Filter results to `~/engineering/terms/`. Surface relevant terms the same way as facts.
 
 ---
 
@@ -156,7 +155,7 @@ mentioned and is directly relevant to the objective, surface it the same way as 
 
 Entry points: Jira ticket, Sentry issue, verbal description, scratch idea.
 
-1. Create the issue.
+1. Create the issue file at `~/engineering/issues/<nnn>-<slug>.md`.
 2. Fill `## Objective` — one sentence, defines done.
 3. Fill `## Scope` — in and off-limits. Both fields required before the issue goes active.
 4. Fill `## Context` with background, links, and constraints.
@@ -164,8 +163,8 @@ Entry points: Jira ticket, Sentry issue, verbal description, scratch idea.
 6. Fill `## Open questions` with anything unresolved.
 
 **If open questions exist before tasks are written:**
-→ invoke `dead-reckoning`. Link resulting spike in `spikes:`. Promote confirmed
-  facts to `~/engineering/facts/` and list in `facts:`. Clear resolved questions.
+→ invoke `dead-reckoning`. Add the resulting spike link under `### Spikes`. Promote
+  confirmed facts and add links under `### Facts`. Clear resolved questions.
 
 **If objective is clear enough to proceed:**
 → invoke `user-story-builder` if scope needs shaping.
@@ -195,29 +194,23 @@ User informs the issue to work on. If not provided, ask before proceeding — do
 ### During execution
 
 **After each completed task:**
-1. Mark `[x]` in `## Tasks`.
-2. Update `updated:` in frontmatter.
-
-**After marking a task `[x]`:**
-1. Commit the change.
-2. Append the short commit hash to the task line: `- [x] Task description abc1234`
-3. Attach a git note to that commit:
-```bash
-   git notes add -m "Task: 
-   Issue: -
-   Why: 
-   Facts: 
-   Files: " 
-```
-4. Update `updated:` in the issue frontmatter.
+1. Mark `[x]` in `## Tasks` and append the short commit hash: `- [x] Task description abc1234`
+2. Attach a git note to that commit:
+   ```bash
+   git notes add -m "Task: <task title>
+   Issue: <issue id>-<slug>
+   Why: <one sentence from issue Objective or Context>
+   Facts: <wiki links if any>
+   Files: <files changed>" $(git log -1 --format="%H")
+   ```
+3. Update `updated:` in the issue frontmatter.
 
 **When a discovery warrants permanent storage:**
-1. invoke `knowledge` skill. Add wiki link to issue's `facts:` field.
+→ invoke `knowledge` skill. Add the wiki link under `### Facts` in the issue.
 
 **When work surfaces something outside issue scope:**
-1. create a new issue in `inbox`. Do not expand scope silently.
-2. if it is an open question that blocks current work, add it to `## Open questions`
-  and surface it to the human before continuing.
+→ create a new issue in `inbox`. Do not expand scope silently.
+→ if it blocks current work, add it to `## Open questions` and surface it to the human.
 
 **When all tasks are `[x]`:**
 > "All tasks complete. Ready for review."
@@ -239,14 +232,15 @@ When resuming after any interruption:
 When all tasks are complete, invoke `review` skill.
 
 After review passes:
-1. Set issue status to `done`.
-2. Archive: move issue to `archive/`. Spikes and facts remain — they outlive the issue.
+1. Human sets status to `done`.
+2. Move issue file to `~/engineering/issues/archive/`.
+3. Spikes and facts are not moved — they outlive the issue.
 
 ---
 
 ## Rules
 
-- Never read `archive/` directories. Stale context.
+- Never read `archive/`. Stale context.
 - `## Scope` with explicit off-limits is required before an issue goes `active`.
 - `## Open questions` must be reviewed at session start. Non-empty = risk. Name it.
 - The agent marks tasks `[x]` as they complete — never in bulk at session end.
