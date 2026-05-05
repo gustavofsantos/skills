@@ -46,9 +46,9 @@ is the only artifact — no separate tracking file is needed.
 
 1. Find the active issue:
    ```bash
-   python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-list.py --status active --format text
+   rg -l '^status: active$' ~/engineering/issues -g '*.md' --max-depth 1 2>/dev/null
    ```
-   Read the issue file at `~/engineering/issues/<id>-<slug>.md`.
+   Read the returned file at `~/engineering/issues/<id>-<slug>.md`.
 
 2. Probe whether Plan Mode is warranted. Before doing anything else, assess the scope
    of the investigation from the central question and any context already given:
@@ -80,9 +80,12 @@ is the only artifact — no separate tracking file is needed.
    > for this session, or do you want to verify it fresh?"
 
 **If no issue exists yet:**
-```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-create.py --title "<title>"
-```
+
+1. Read `~/engineering/.counters/issues` (or treat as `0` if absent).
+2. `next = current + 1`; write it back to `~/engineering/.counters/issues` (zero-padded to 3 digits).
+3. Slugify the title (lowercase, hyphens, max 5 words).
+4. Write `~/engineering/issues/<NNN>-<slug>.md` using the template in `skills/workflow/references/issue-template.md`.
+5. Confirm: "Created issue <NNN>: <title>."
 
 **If no system name is clear:** ask "What system is this?" before anything else.
 

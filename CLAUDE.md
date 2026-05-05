@@ -52,10 +52,15 @@ Every skill is defined by `SKILL.md` with YAML frontmatter:
 
 ```markdown
 ---
-name: <skill-name>
 description: >
-  One-paragraph description used by the AI harness to decide when to
-  invoke this skill. Trigger phrases belong here.
+  One sentence on what the skill does. No trigger phrases here.
+when_to_use: >
+  Trigger phrases (Portuguese + English) and example requests that activate this skill.
+argument-hint: [arg1] [arg2]   # only when arguments are meaningful
+arguments: [arg1, arg2]        # mirror argument-hint when used
+allowed-tools: <space-separated>   # pre-approve tools to kill permission prompts
+effort: high                   # only for reasoning-heavy skills
+user-invocable: false          # only for reference-only skills not shown in /
 ---
 
 # Skill Title
@@ -63,11 +68,13 @@ description: >
 Instructions for the AI...
 ```
 
-The `description` field is the trigger surface — it controls when Claude activates the skill automatically. Keep it precise: include canonical trigger phrases and the exclusion cases.
+`description` answers "what does it do" in one sentence. `when_to_use` is the trigger surface — include canonical phrases and exclusion cases. Drop fields that don't apply. The `name:` field defaults to the directory name — do not include it.
 
 ## Skill conventions
 
-- **Scripts** are Python 3, invoked via `python3 $CLAUDE_PLUGIN_ROOT/skills/<name>/scripts/<script>.py`. `$CLAUDE_PLUGIN_ROOT` is set by the plugin system to the plugin's installation directory — skills reference only the path relative to that root, never a hardcoded install location. Scripts accept `--format json` (default) or `--format text` unless the script has a different interface.
+- **Skills do not shell out to custom Python scripts** for reading or writing the engineering vault (`~/engineering/`). Use the native Read / Write / Edit / Bash tools directly. Scripts are reserved for genuine external integrations — e.g. `skills/jira-context/scripts/jira-ticket-context.py` for Jira/ADF parsing. When a script is needed, invoke it via `python3 ${CLAUDE_SKILL_DIR}/scripts/<script>.py` so the path resolves under plugin, personal, and Cursor installations alike.
+- **`${CLAUDE_SKILL_DIR}`** resolves the skill's installation directory across all three distribution methods (plugin, personal symlinks, Cursor copies). Use it instead of `$CLAUDE_PLUGIN_ROOT/skills/<name>`.
+- **Search conventions:** use `fd` and `rg` for file listing and content search throughout skill bodies. They're faster on large trees and consistent across the user's machines. Anchor `rg` patterns to line boundaries when matching YAML frontmatter fields (e.g. `rg -l '^status: active$'`).
 - **References** are markdown files the skill explicitly `Read`s at runtime — they are not auto-loaded. The skill SKILL.md must name which references to load and when.
 - Skills are designed to be invoked from Claude Code (bash tool available) or Claude Desktop (no bash tool). Skills that use bash must detect the environment and fall back gracefully for Desktop.
 - The `workflow` skill is the orchestrator — it coordinates all other skills. New issues, session starts, and context recovery all route through it first.
@@ -90,8 +97,8 @@ The `qmd` CLI indexes this directory for semantic search. After writing any fact
 
 ## Adding a new skill
 
-1. Create `skills/<name>/SKILL.md` with frontmatter (`name`, `description`) and the instruction body.
-2. Add any Python scripts to `skills/<name>/scripts/`.
+1. Create `skills/<name>/SKILL.md` with frontmatter (`description`, `when_to_use`) and the instruction body.
+2. Add Python scripts to `skills/<name>/scripts/` only for genuine external integrations. Vault reads and writes use Read/Write/Edit directly.
 3. Add any reference docs to `skills/<name>/references/`.
 4. Run `npx skills add ./ -g` to install locally.
 5. Add a row to the appropriate table in `README.md` — name, link, and one-sentence description.
