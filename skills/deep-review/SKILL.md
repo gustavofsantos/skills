@@ -1,5 +1,4 @@
 ---
-name: review
 description: >
   Two-phase code review. Phase 1 is scope and safety — test confidence, scope discipline,
   risk signal. Phase 2 is architectural depth — applied only to the core changed logic,

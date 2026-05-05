@@ -34,7 +34,7 @@ npx skills add gustavofsantos/skills -g
 To install only specific skills:
 
 ```bash
-npx skills add gustavofsantos/skills -g -s workflow review knowledge
+npx skills add gustavofsantos/skills -g -s workflow deep-review knowledge
 ```
 
 To install from a local clone of this repo:
@@ -82,7 +82,7 @@ npx skills remove -g        # uninstall
 
 | Skill | Description |
 |---|---|
-| [review](skills/review/SKILL.md) | Two-phase code review. Phase 1: scope and safety (test confidence, scope discipline, risk signal). Phase 2: architectural depth on the core change only. |
+| [deep-review](skills/deep-review/SKILL.md) | Two-phase code review. Phase 1: scope and safety (test confidence, scope discipline, risk signal). Phase 2: architectural depth on the core change only. |
 | [playbook-builder](skills/playbook-builder/SKILL.md) | Creates structured test playbooks for validating features in local, staging, or production environments. |
 
 ### Knowledge Management
