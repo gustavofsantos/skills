@@ -1,13 +1,15 @@
 ---
-name: knowledge
 description: >
-  Manages the knowledge library — atomic facts and spike narratives that accumulate
-  across all work. Use this skill when a validated discovery should be preserved beyond
-  a single session, when promoting a dead-reckoning theorem to a permanent fact, when
-  querying for prior knowledge before starting work, or when maintaining the qmd index.
-  Triggers on phrases like "save this as a fact", "do we know anything about X",
-  "promote this theorem", "what do we know about Y", or when the workflow skill's
-  session start protocol runs knowledge retrieval.
+  Manages the long-term knowledge library — atomic facts, spike narratives, and business
+  domain terms stored in ~/engineering/.
+when_to_use: >
+  Use when a validated discovery should be preserved beyond a single session, when promoting a
+  dead-reckoning theorem to a permanent fact, when querying for prior knowledge, or when
+  maintaining the qmd index. Triggers on "save this as a fact", "do we know anything about X",
+  "promote this theorem", "what do we know about Y", or when the workflow skill's session start
+  protocol runs knowledge retrieval.
+argument-hint: [topic]
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(qmd:*) Bash(cat:*)
 ---
 
 # Knowledge

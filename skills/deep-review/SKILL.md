@@ -1,11 +1,14 @@
 ---
 description: >
-  Two-phase code review. Phase 1 is scope and safety — test confidence, scope discipline,
-  risk signal. Phase 2 is architectural depth — applied only to the core changed logic,
-  not the whole diff. Works on a branch diff, a single file, or a usage pattern.
-  Use when the user says "review branch", "review before PR", "review this file",
-  "check my changes", "faça um code review", "analise este código", "revise este PR",
-  or similar. Replaces both review-branch and use-reviewer.
+  Two-phase code review — Phase 1 scope and safety (test confidence, scope discipline, risk
+  signal), Phase 2 architectural depth applied only to the core changed logic.
+when_to_use: >
+  Use when the user says "review branch", "review before PR", "review this file", "check my
+  changes", "faça um code review", "analise este código", "revise este PR", or similar.
+  Works on a branch diff, a single file, or a usage pattern.
+argument-hint: [target]
+effort: high
+allowed-tools: Read Bash(rg:*) Bash(fd:*) Bash(git:*) Bash(cat:*)
 ---
 
 # Review

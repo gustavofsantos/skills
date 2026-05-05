@@ -1,18 +1,19 @@
 ---
-name: dead-reckoning
 description: >
-  Structured analysis partner for complex legacy codebases. Use when the user wants to
-  understand existing behavior, trace a call tree, investigate a bug, or answer a
-  specific architectural question in a system that is hard to read (Clojure, verbose
-  Java, Kotlin monorepos, or any poorly structured codebase). This skill drives the
-  traversal session — enforcing a central question, managing a living knowledge base
-  of facts and spikes, producing explicit coverage evidence, and finalizing a spike
-  document at the end. The human validates; the agent traverses and translates.
-  Activate on phrases like "analisa esse código", "quero entender como funciona",
-  "como isso está implementado", "me ajuda a traçar", "trace this call",
-  "how is this built", "what does X do in production", or any request to investigate
-  existing code before making a decision or raising a PR. Do not use for greenfield
-  design or planning without a codebase — use thinking-partner for that.
+  Structured analysis partner for tracing behavior, investigating bugs, and answering
+  architectural questions in complex or legacy codebases.
+when_to_use: >
+  Use when understanding existing behavior, tracing a call tree, investigating a bug, or
+  answering a specific architectural question in a system that is hard to read (Clojure,
+  verbose Java, Kotlin monorepos, or any poorly structured codebase). Triggers on "analisa
+  esse código", "quero entender como funciona", "como isso está implementado", "me ajuda a
+  traçar", "trace this call", "how is this built", "what does X do in production", or any
+  request to investigate existing code before making a decision or raising a PR. Do not use
+  for greenfield design or planning without a codebase — use thinking-partner for that.
+argument-hint: [issue-id]
+arguments: [issue_id]
+effort: high
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(qmd:*) Bash(git:*) Bash(cat:*)
 ---
 
 # Dead Reckoning — Legacy Analysis

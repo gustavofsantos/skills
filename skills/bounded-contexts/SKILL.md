@@ -1,13 +1,12 @@
 ---
-name: bounded-contexts
 description: >
-  Apply bounded context thinking and loose coupling principles when designing or reviewing
-  module boundaries, service contracts, and component interactions. Use this skill whenever
-  the user is deciding how two parts of the system should communicate, when adding a dependency
+  Applies bounded context and loose coupling principles when designing or reviewing module
+  boundaries, service contracts, and component interactions.
+when_to_use: >
+  Use when deciding how two parts of the system should communicate, when adding a dependency
   between modules, when a change in one place is breaking things in another, or when discussing
-  system structure. Trigger on phrases like "how should A talk to B", "should this module
-  depend on that one", "I'm changing X and it's breaking Y", "where does this belong",
-  "this is too tangled", or any discussion about system boundaries and responsibilities.
+  system structure. Triggers on "how should A talk to B", "should this module depend on that
+  one", "I'm changing X and it's breaking Y", "where does this belong", "this is too tangled".
 ---
 
 # Bounded Contexts / Loose Coupling
