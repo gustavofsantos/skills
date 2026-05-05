@@ -177,20 +177,15 @@ but the code uses `BillingPeriod`. Omit the section entirely when names align.
 
 #### Claude Code
 
-```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-term-create.py \
-  --term "Ciclo de faturamento" \
-  --domain financeiro \
-  [--aliases "billing cycle,faturamento"]
-```
-
-Then fill `## Definição` and `## Não é`, and index:
-
-```bash
-qmd update && qmd embed
-```
-
-Reference by wiki link: `[[TERM-NNN-slug]]`
+1. `domain_dir = ~/engineering/terms/<domain>` — create with `mkdir -p` if absent.
+2. Read `~/engineering/.counters/terms` (treat as `0` if absent). Increment and write back.
+3. Slugify the term name (lowercase, hyphens, max 5 words).
+4. Write `$domain_dir/TERM-<NNN>-<slug>.md` using the format below — substitute fields.
+5. Fill `## Definição` and `## Não é`, then index:
+   ```bash
+   qmd update && qmd embed
+   ```
+6. Reference by wiki link: `[[TERM-NNN-slug]]`.
 
 #### Claude Desktop
 

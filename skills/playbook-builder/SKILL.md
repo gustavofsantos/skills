@@ -37,10 +37,11 @@ ID format: `PB-NNN` (zero-padded, sequential). Separate from `FACT-NNN`.
 
 Next ID:
 ```bash
-ls ~/.knowledge/playbooks/ 2>/dev/null | grep -oP 'PB-\d+' | sort -t- -k2 -n | tail -1
+fd '^PB-\d+.*\.md$' ~/.knowledge/playbooks -d 1 2>/dev/null \
+  | sed 's|.*/PB-||;s|-.*||' | sort -n | tail -1
 ```
 
-Increment by 1. If no files exist, start at `PB-001`.
+Increment by 1 (zero-pad to 3 digits). If no files exist, start at `PB-001`.
 
 ---
 

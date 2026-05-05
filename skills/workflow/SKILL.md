@@ -93,8 +93,12 @@ state them here as named constraints — not as prose.
 
 ## Issue management
 
-**Creating an issue:** determine the next ID by listing `~/engineering/issues/` and
-incrementing the highest existing number. Create the file directly.
+**Creating an issue:**
+
+1. Read `~/engineering/.counters/issues` (treat as `0` if absent). Increment and write back (zero-pad to 3 digits).
+2. Slugify the title (lowercase, hyphens, max 5 words).
+3. Write `~/engineering/issues/<NNN>-<slug>.md` — use the template in `references/issue-template.md`.
+4. Confirm: "Created issue <NNN>: <title>."
 
 **Archiving an issue:** move the file to `~/engineering/issues/archive/`. Spikes and
 facts are not moved — they outlive the issue.
