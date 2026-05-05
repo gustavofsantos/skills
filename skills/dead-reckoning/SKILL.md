@@ -42,13 +42,14 @@ the traversal proceeds — candidates are marked `(candidate)` until the human c
 When Plan Mode is active, it provides phase tracking. Without Plan Mode, the spike itself
 is the only artifact — no separate tracking file is needed.
 
+## Active issue at session start
+
+!`rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1`
+
 ## Session start
 
-1. Find the active issue:
-   ```bash
-   rg -l '^status: active$' ~/engineering/issues -g '*.md' --max-depth 1 2>/dev/null
-   ```
-   Read the returned file at `~/engineering/issues/<id>-<slug>.md`.
+1. Read the file returned above at `~/engineering/issues/<id>-<slug>.md`. If the injection
+   returned nothing, ask the user which issue to work on or create one (see recipe below).
 
 2. Probe whether Plan Mode is warranted. Before doing anything else, assess the scope
    of the investigation from the central question and any context already given:
