@@ -14,6 +14,16 @@ allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(cat:*) Bash
 
 # Workflow
 
+## Currently active issues
+
+!`rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null || echo '(none active)'`
+
+## Inbox count
+
+!`rg -l '^status: inbox$' ~/engineering/issues -g '*.md' 2>/dev/null | wc -l | tr -d ' '`
+
+---
+
 One abstraction. One source of truth.
 
 **Issue** — unit of intent and execution state. Lives at `~/engineering/issues/<nnn>-<slug>.md`.

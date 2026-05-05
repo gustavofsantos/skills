@@ -15,6 +15,10 @@ allowed-tools: Bash(python3:*) Bash(acli:*)
 
 # Jira Context Skill
 
+## Ticket context
+
+!`python3 ${CLAUDE_SKILL_DIR}/scripts/jira-ticket-context.py $ARGUMENTS`
+
 ## When to Run (DO NOT ASK — JUST RUN)
 
 | Scenario | Action |
