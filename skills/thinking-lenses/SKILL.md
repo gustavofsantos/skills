@@ -1,6 +1,13 @@
 ---
-name: thinking-lenses
-description: A set of structured lenses for going deeper during a thinking session. Use when the thinking   partner skill signals that a lens would help, or when the user explicitly asks to apply one. Do NOT run all lenses automatically — apply one at a time, only when invited or when the   situation clearly calls for it. Each lens is a short protocol, not a full interrogation.   Activate on phrases like "let's go deeper", "why does this keep happening", "check my   reasoning", "am I missing something structural", "what if we don't change anything",   "what is this coupling", "what's braided here", or when a thinking session seems stuck at the surface.
+description: >
+  Structured analytical lenses for reaching specific kinds of depth during a thinking session.
+when_to_use: >
+  Use when thinking-partner signals a lens would help, or when the user explicitly asks to apply
+  one. Triggers on "let's go deeper", "why does this keep happening", "check my reasoning", "am
+  I missing something structural", "what if we don't change anything", "what is this coupling",
+  "what's braided here", or when a thinking session seems stuck at the surface. Apply one lens
+  at a time only when invited or when the situation clearly calls for it.
+user-invocable: false
 ---
  
 # Thinking Lenses

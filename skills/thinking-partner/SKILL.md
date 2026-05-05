@@ -1,6 +1,13 @@
 ---
-name: thinking-partner
-description: Socratic thinking partner for understanding problems deeply before acting on them. Use when the user wants to think through a problem, plan a feature, understand a domain, scope work, or reach shared understanding before writing code or delegating to an agent. This skill drives the conversation — asking questions, pushing back, tracking the progression of the thinking. Do not use for execution. The output is a flush document the user can hand to Claude Code or Cursor. Activate when the user says things like "let's think about", "I want to understand", "help me plan", "let's figure out", "continue thinking about", or arrives with a problem rather than a solution.
+description: >
+  Socratic thinking partner for exploring problems deeply before delegating to an executor.
+when_to_use: >
+  Use when the user wants to think through a problem, plan a feature, understand a domain, scope
+  work, or reach shared understanding before writing code or delegating to an agent. Triggers on
+  "let's think about", "I want to understand", "help me plan", "let's figure out", "continue
+  thinking about", or when the user arrives with a problem rather than a solution.
+effort: high
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*)
 ---
 
 # Thinking Partner

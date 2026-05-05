@@ -1,12 +1,15 @@
 ---
-name: qmd
-description: Search markdown knowledge bases, notes, and documentation using QMD. Use when users ask to search notes, find documents, or look up information.
+description: >
+  Semantic and keyword search over local markdown collections using the qmd CLI or MCP server.
+when_to_use: >
+  Use when searching notes, finding documents, or looking up information in the knowledge
+  library using qmd.
 license: MIT
 compatibility: Requires qmd CLI or MCP server. Install via `npm install -g @tobilu/qmd`.
 metadata:
   author: tobi
   version: "2.0.0"
-allowed-tools: Bash(qmd:*), mcp__qmd__*
+allowed-tools: Bash(qmd:*) mcp__qmd__*
 ---
 
 # QMD - Quick Markdown Search

@@ -1,17 +1,21 @@
 ---
-name: tdd-design
 description: >
-  Drive implementation using Test-Driven Development as a design tool, not just a testing
-  strategy. Use this skill whenever the user is about to write new production code, implement
-  a function, add a behavior, or fix a bug with a reproducible case. Trigger on phrases like
-  "implement X", "add behavior Y", "write the function that...", "make this work", or when
-  the user jumps straight to writing implementation code. Also trigger if the user writes
-  code without a failing test first. This skill enforces the red-green-refactor cycle and
-  uses test friction as a design signal. When a behavioral contract from test-design is
-  present, consume it — do not re-derive what to test.
+  Drives implementation using Test-Driven Development as a design tool, enforcing the
+  red-green-refactor cycle and using test friction as a design signal.
+when_to_use: >
+  Use whenever the user is about to write new production code, implement a function, add a
+  behavior, or fix a bug with a reproducible case. Triggers on "implement X", "add behavior Y",
+  "write the function that...", "make this work", or when the user jumps straight to
+  implementation code. Also trigger if the user writes code without a failing test first.
+  When a behavioral contract from test-design is present, consume it — do not re-derive.
+allowed-tools: Read Edit Bash(rg:*) Bash(fd:*)
 ---
 
 # TDD as Design Tool
+
+## Contract for active issue
+
+!`cat ~/.knowledge/contracts/$(rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1 | xargs -I{} basename {} .md | cut -d- -f1).md 2>/dev/null || echo '(no contract — run test-design first)'`
 
 ## Core idea
 
