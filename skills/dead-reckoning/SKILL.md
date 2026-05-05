@@ -233,7 +233,7 @@ Mark promoted affirmations in the spike with `→ [[FACT-NNN-slug]]` replacing t
 
 ## Spike document format
 
-```markdown
+<spike>
 # {Investigation title}
 
 **Central question:** {One sentence.}
@@ -274,7 +274,7 @@ Omit this section if no mappable structure was found.}
 ## Open questions
 
 {Genuine unknowns not resolved.}
-```
+</spike>
 
 ## What this skill does not do
 

@@ -60,7 +60,7 @@ Terms are scoped by business domain, not by project or codebase.
 
 ## Fact format
 
-```markdown
+<fact>
 ---
 id: FACT-NNN
 title: "Short label — what this fact says"
@@ -68,10 +68,6 @@ confidence: asserted | validated
 created: YYYY-MM-DD
 confirmed: YYYY-MM-DD
 tags: [auth, clojure, seubarriga]
-refs:
-  - spike: "[[001-auth-investigation]]"
-  - issue: "007"
-  - commit: abc1234
 ---
 
 ## Statement
@@ -91,7 +87,16 @@ Prefer commit hash over file:line — a changed hash signals staleness.
 ## Notes
 
 Optional. Caveats, edge cases, conditions under which this might not hold.
-```
+
+---
+
+### Refs:
+- [Reference to other documents or external information]
+- spike: [[001-auth-investigation]]
+- issue: [[007-auth-investigation]]
+- commit: abc1234
+...
+</fact>
 
 **Confidence levels:**
 - `asserted` — stated by the human as external truth. Not yet verified in code.
@@ -110,11 +115,11 @@ A spike references facts by wiki link. It never contains the fact content.
 
 ```markdown
 This confirms that auth token refresh happens before expiry validation.
-→ [[FACT-007-auth-token-refresh-window]]
+-> [[FACT-007-auth-token-refresh-window]]
 
 The billing cycle is immutable once created — updates are not possible,
 only replacements.
-→ [[FACT-012-billing-cycle-immutability]], [[FACT-013-billing-replacement-flow]]
+-> [[FACT-012-billing-cycle-immutability]], [[FACT-013-billing-replacement-flow]]
 ```
 
 ---
@@ -138,7 +143,7 @@ A term without a `## Referências` entry is valid — it defines the concept for
 
 ### Term format
 
-```markdown
+<term>
 ---
 id: TERM-NNN
 term: "Nome do conceito"
@@ -160,7 +165,7 @@ aliases: []
 
 - [[FACT-NNN-slug]]
 - [[TERM-NNN-slug]]
-```
+</term>
 
 The `## No código` section is optional. Include it only when the name used in code
 diverges from the business name — e.g., the domain calls it "Ciclo de faturamento"
