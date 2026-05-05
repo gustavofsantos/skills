@@ -145,8 +145,14 @@ Once confirmed, produce the artifact:
 
 ---
 
-After producing the artifact, say:
-> "Contract is ready. Start tdd-design with the first case."
+After producing the artifact:
+
+1. Find the active issue ID:
+   ```bash
+   rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1 | xargs basename | cut -d- -f1
+   ```
+2. Write the contract to `~/.knowledge/contracts/<issue-id>.md` so `tdd-design` can read it.
+3. Say: "Contract is ready. Start tdd-design with the first case."
 
 ---
 

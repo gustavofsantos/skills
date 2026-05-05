@@ -13,6 +13,10 @@ allowed-tools: Read Edit Bash(rg:*) Bash(fd:*)
 
 # TDD as Design Tool
 
+## Contract for active issue
+
+!`cat ~/.knowledge/contracts/$(rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1 | xargs -I{} basename {} .md | cut -d- -f1).md 2>/dev/null || echo '(no contract — run test-design first)'`
+
 ## Core idea
 
 Write the test first. Not as a formality — as a **design act**.
