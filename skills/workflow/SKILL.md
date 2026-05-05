@@ -26,59 +26,26 @@ state file. Plan Mode handles transient session state. The issue handles everyth
 ~/engineering/
   issues/
     001-fix-auth-bug.md
-    archive/            ← completed issues — never read these
-  facts/                ← managed by the knowledge skill
-  spikes/               ← managed by the knowledge skill
-  terms/                ← managed by the knowledge skill
+    archive/            <- completed issues — never read these
+  facts/                <- managed by the knowledge skill
+  spikes/               <- managed by the knowledge skill
+  terms/                <- managed by the knowledge skill
     financeiro/
     fretboard/
-  thinking/             ← managed by the thinking-partner skill
-  .counters/
-    issues
-    facts
-    spikes
-    terms
+  thinking/             <- managed by the thinking-partner skill
 ```
-
----
-
-## Scripts
-
-All scripts live in `skills/workflow/scripts/` relative to the plugin root and are invoked with `python3`.
-
-| Script | Purpose |
-|---|---|
-| `work-issue-create.py` | Scaffold a new issue |
-| `work-issue-list.py` | List issues, filter by status or tag |
-| `work-issue-archive.py` | Move a done issue to archive |
-| `work-term-create.py` | Scaffold a new term (knowledge/terms) |
-
-```bash
-SCRIPTS=$CLAUDE_PLUGIN_ROOT/skills/workflow/scripts
-
-python3 $SCRIPTS/work-issue-create.py --title "Fix auth bug" --status inbox
-python3 $SCRIPTS/work-issue-list.py --status active --format text
-python3 $SCRIPTS/work-issue-archive.py --issue 001
-python3 $SCRIPTS/work-term-create.py --term "Ciclo de faturamento" --domain financeiro
-```
-
-All scripts accept `--format json` (default) or `--format text`.
 
 ---
 
 ## Issue schema
 
-```yaml
+<issue>
 ---
 id: "001"
 title: "Fix auth bug"
 status: inbox | not-now | active | done
 branch: feat/fix-auth          # optional — used for worktree context
 tags: [feature, api]
-facts:
-  - "[[FACT-007-auth-token-refresh-window]]"
-spikes:
-  - "[[001-auth-investigation]]"
 created: 2026-04-27
 updated: 2026-04-27
 ---
@@ -109,7 +76,16 @@ If non-empty when work begins, consider dead-reckoning before writing tasks.
 
 - [ ] Task 1
 - [ ] Task 2
-```
+
+---
+
+### Facts
+- [[FACT-007-auth-token-refresh-window]]
+
+### Spikes
+- [[001-auth-investigation]]
+
+</issue>
 
 **Valid statuses:** `inbox` `not-now` `active` `done`
 
@@ -180,11 +156,7 @@ mentioned and is directly relevant to the objective, surface it the same way as 
 
 Entry points: Jira ticket, Sentry issue, verbal description, scratch idea.
 
-1. Create the issue:
-   ```bash
-   python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-create.py \
-     --title "<title>" [--status inbox] [--tags feature,api] [--branch feat/slug]
-   ```
+1. Create the issue.
 2. Fill `## Objective` — one sentence, defines done.
 3. Fill `## Scope` — in and off-limits. Both fields required before the issue goes active.
 4. Fill `## Context` with background, links, and constraints.
@@ -226,12 +198,25 @@ User informs the issue to work on. If not provided, ask before proceeding — do
 1. Mark `[x]` in `## Tasks`.
 2. Update `updated:` in frontmatter.
 
+**After marking a task `[x]`:**
+1. Commit the change.
+2. Append the short commit hash to the task line: `- [x] Task description abc1234`
+3. Attach a git note to that commit:
+```bash
+   git notes add -m "Task: 
+   Issue: -
+   Why: 
+   Facts: 
+   Files: " 
+```
+4. Update `updated:` in the issue frontmatter.
+
 **When a discovery warrants permanent storage:**
-→ invoke `knowledge` skill. Add wiki link to issue's `facts:` field.
+1. invoke `knowledge` skill. Add wiki link to issue's `facts:` field.
 
 **When work surfaces something outside issue scope:**
-→ create a new issue in `inbox`. Do not expand scope silently.
-→ if it is an open question that blocks current work, add it to `## Open questions`
+1. create a new issue in `inbox`. Do not expand scope silently.
+2. if it is an open question that blocks current work, add it to `## Open questions`
   and surface it to the human before continuing.
 
 **When all tasks are `[x]`:**
@@ -255,11 +240,7 @@ When all tasks are complete, invoke `review` skill.
 
 After review passes:
 1. Set issue status to `done`.
-2. Archive:
-   ```bash
-   python3 $CLAUDE_PLUGIN_ROOT/skills/workflow/scripts/work-issue-archive.py --issue 001
-   ```
-   Moves issue to `archive/`. Spikes and facts remain — they outlive the issue.
+2. Archive: move issue to `archive/`. Spikes and facts remain — they outlive the issue.
 
 ---
 
