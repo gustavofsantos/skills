@@ -163,16 +163,31 @@ User informs the issue to work on. If not provided, ask before proceeding — do
 ### During execution
 
 **After each completed task:**
+
 1. Mark `[x]` in `## Tasks` and append the short commit hash: `- [x] Task description abc1234`
-2. Attach a git note to that commit:
-   ```bash
+
+2. Assemble the summarization input from what is already in working context:
+   issue objective, completed task title, and prose of any facts loaded this session
+   that were relevant to this task. Pipe to Haiku to produce a self-contained Context field:
+```bash
+   CONTEXT_SUMMARY=$(printf "Issue objective: <objective>\nTask: <task title>\nContext used:\n<prose of relevant loaded facts — omit if none>" \
+     | claude -p \
+       "Summarize in 2-3 sentences what was known and what informed this task. Self-contained — no file paths, no wiki links, no FACT-NNN references. Plain prose only." \
+       --model claude-haiku-4-5-20251001 \
+       --max-turns 1)
+```
+
+3. Attach a git note to that commit:
+```bash
    git notes add -m "Task: <task title>
-   Issue: <issue id>-<slug>
-   Why: <one sentence from issue Objective or Context>
-   Facts: <wiki links if any>
+   Issue: <issue id>: <title>
+   Why: <one sentence from issue Objective>
+   Context: $CONTEXT_SUMMARY
    Files: <files changed>" $(git log -1 --format="%H")
-   ```
-3. Update `updated:` in the issue frontmatter.
+```
+   Omit the `Context:` field entirely if no facts or session context informed this task.
+
+4. Update `updated:` in the issue frontmatter.
 
 **When a discovery warrants permanent storage:**
 → invoke `knowledge` skill. Add the wiki link under `### Facts` in the issue.
