@@ -128,7 +128,7 @@ SESSION_SLUGS=$(printf '%s' "$NOTES" | rg "^Session: (.+)" -r '$1' | sort -u)
 SESSIONS_BRANCH=$(git config user.name \
   | tr '[:upper:]' '[:lower:]' \
   | tr -cs 'a-z0-9' '-' \
-  | sed 's/-*$/-/;s/$/sessions/')
+  | sed 's/-*$//;s/$/\/sessions/')
 SESSION_DOCS=$(echo "$SESSION_SLUGS" | while read slug; do
   [ -z "$slug" ] && continue
   doc=$(git show "${SESSIONS_BRANCH}:${slug}/SESSION.md" 2>/dev/null)

@@ -64,7 +64,7 @@ Derive the sessions branch name and retrieve each SESSION.md:
 SESSIONS_BRANCH=$(git config user.name \
   | tr '[:upper:]' '[:lower:]' \
   | tr -cs 'a-z0-9' '-' \
-  | sed 's/-*$/-/;s/$/sessions/')
+  | sed 's/-*$//;s/$/\/sessions/')
 
 SESSION_DOCS=$(echo "$SESSION_SLUGS" | while read slug; do
   [ -z "$slug" ] && continue
