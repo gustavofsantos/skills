@@ -149,15 +149,73 @@ Narrative belongs in spikes. Facts belong in the knowledge library.
 
 ### Session start protocol
 
-User informs the issue to work on. If not provided, ask before proceeding — do not guess.
+User informs the issue to work on. If not provided, ask before proceeding —
+do not guess.
 
-1. Run knowledge retrieval.
-2. Read the issue — objective, scope, context, open questions, tasks.
-3. If `## Open questions` has unresolved items:
-   > "There are open questions on this issue. Recommend resolving them before execution.
-   > Want to run dead-reckoning, or proceed and treat them as known risks?"
+1. **Retrieve the last session for this issue.**
+
+   Extract the issue ID from the issue file frontmatter and search the sessions branch:
+
+   ```bash
+   ISSUE_ID=$(rg '^id:' "$ISSUE_FILE" | head -1 | sed 's/id: *//;s/"//g' | tr -d '[:space:]')
+
+   SESSIONS_BRANCH=$(git config user.name \
+     | tr '[:upper:]' '[:lower:]' \
+     | tr -cs 'a-z0-9' '-' \
+     | sed 's/-*$/-/;s/$/sessions/')
+
+   LAST_SESSION=$(git show "${SESSIONS_BRANCH}" 2>/dev/null \
+     | git ls-tree "${SESSIONS_BRANCH}" 2>/dev/null \
+     | rg "\t${ISSUE_ID}-" \
+     | awk '{print $NF}' \
+     | sort | tail -1)
+
+   if [ -n "$LAST_SESSION" ]; then
+     git show "${SESSIONS_BRANCH}:${LAST_SESSION}/SESSION.md" 2>/dev/null
+   fi
+   ```
+
+   If a SESSION.md is found, surface it immediately:
+
+   > "Last session on this issue: [outcome]. Key decisions: [...].
+   > Pending tasks from that session: [any [ ] tasks listed]."
+
+   If the sessions branch does not exist or no session matches the issue ID,
+   proceed silently — this is expected for issues that have not been worked on yet.
+
+2. **Run knowledge retrieval.**
+
+   ```bash
+   qmd query "<issue title> <issue objective>" --min-score 0.5 -n 8
+   ```
+
+   Load returned facts and spike excerpts into working context.
+   If nothing scores above threshold, proceed without — do not ask the human.
+
+   If something surfaces that the human hasn't mentioned:
+   > "Before we start — [[FACT-012-auth-token-refresh]] covers token refresh behavior
+   > here. Worth keeping in mind."
+
+   If a loaded fact contradicts something in the issue's Context: surface it
+   immediately before any execution begins.
+
+   Then run a second query targeting terms for the relevant domain:
+
+   ```bash
+   qmd query "<domain> <key concepts from objective>" --min-score 0.5 -n 5
+   ```
+
+   Filter results to `~/engineering/terms/`. Surface relevant terms the same way
+   as facts.
+
+3. **Read the issue** — objective, scope, context, open questions, tasks.
+
+4. **If `## Open questions` has unresolved items:**
+   > "There are open questions on this issue. Recommend resolving them before
+   > execution. Want to run dead-reckoning, or proceed and treat them as known risks?"
    Wait for the human's decision.
-4. State what you understand and what you're about to do. Wait for confirmation
+
+5. **State what you understand and what you're about to do.** Wait for confirmation
    if anything is ambiguous.
 
 ### During execution
