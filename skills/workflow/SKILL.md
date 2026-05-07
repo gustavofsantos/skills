@@ -180,7 +180,6 @@ User informs the issue to work on. If not provided, ask before proceeding — do
 3. Attach a git note to that commit:
 ```bash
    git notes add -m "Task: <task title>
-   Issue: <issue id>: <title>
    Why: <one sentence from issue Objective>
    Context: $CONTEXT_SUMMARY
    Files: <files changed>" $(git log -1 --format="%H")
