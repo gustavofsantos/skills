@@ -58,6 +58,7 @@ npx skills remove -g        # uninstall
 | Skill | Description |
 |---|---|
 | [workflow](skills/workflow/SKILL.md) | Protocol for managing daily engineering work — the orchestrator that coordinates all other skills across planning, execution, and review phases. |
+| [session-close](skills/session-close/SKILL.md) | Closes the current working session: synthesizes a SESSION.md via Haiku, writes it to the personal sessions branch, and links all session commits back via git notes. |
 
 ### Thinking & Design
 
@@ -92,6 +93,8 @@ npx skills remove -g        # uninstall
 | [knowledge](skills/knowledge/SKILL.md) | Manages the long-term knowledge library — atomic facts, spike narratives, and business domain terms stored in ~/engineering/. |
 | [dead-reckoning](skills/dead-reckoning/SKILL.md) | Structured analysis partner for tracing behavior, investigating bugs, and answering architectural questions in complex or legacy codebases. |
 | [qmd](skills/qmd/SKILL.md) | Semantic and keyword search over local markdown collections using the qmd CLI or MCP server. |
+| [survey](skills/survey/SKILL.md) | Surveys an unfamiliar repository to build atomic facts correlated with the existing knowledge base, plus a spike document capturing what was covered and what remains open. |
+| [provenance](skills/provenance/SKILL.md) | Retrieves the full intent context behind a commit — issue objective, task, linked facts, semantic git note, and session document — given a commit hash. |
 
 ### Planning & Tracking
 
@@ -105,6 +108,7 @@ npx skills remove -g        # uninstall
 | Skill | Description |
 |---|---|
 | [jira-context](skills/jira-context/SKILL.md) | Fetches Jira ticket context via acli — parent, children, and comments — the moment a ticket ID or URL appears in the conversation. |
+| [project-setup](skills/project-setup/SKILL.md) | Installs or updates provenance git hooks in the current project's .git/hooks/. |
 
 ## Development setup
 
