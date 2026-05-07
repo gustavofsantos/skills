@@ -1,13 +1,13 @@
 ---
 description: >
-  Retrieves the full intent context behind a commit — issue objective, task, linked facts,
-  and semantic git note — given a commit hash.
+  Retrieves the full intent context behind a commit — issue objective, task, linked
+  facts, semantic git note, and session document — given a commit hash.
 when_to_use: >
   Use when debugging a change and wanting to understand why it was made. Triggers on
   "por que isso foi mudado", "contexto desse commit", "provenance <hash>", "quem mudou
   isso e por quê", "o que motivou essa mudança", or after a git blame when investigating
-  a specific commit hash. Do not use for code traversal without a hash — use dead-reckoning
-  for that.
+  a specific commit hash. Do not use for code traversal without a hash — use
+  dead-reckoning for that.
 argument-hint: [commit-hash]
 arguments: [commit_hash]
 allowed-tools: Bash(git:*) Bash(rg:*) Bash(fd:*) Bash(cat:*)
@@ -15,8 +15,9 @@ allowed-tools: Bash(git:*) Bash(rg:*) Bash(fd:*) Bash(cat:*)
 
 # Provenance
 
-Recovers the intent behind a commit by traversing from the hash to the issue that produced
-it, the task that corresponds to it, and the facts that informed it.
+Recovers the full intent behind a commit by traversing from the hash to the issue
+that produced it, the task that corresponds to it, the facts that informed it, and
+the session that generated it.
 
 ---
 
@@ -29,8 +30,6 @@ Desktop path in each step.
 
 ## Step 1 — Resolve the hash
 
-**Claude Code:**
-
 ```bash
 HASH="${ARGUMENTS:-HEAD}"
 FULL_HASH=$(git rev-parse "$HASH" 2>/dev/null)
@@ -41,13 +40,9 @@ If `git rev-parse` fails, tell the user the hash is invalid and stop.
 If `$ARGUMENTS` is empty, use `HEAD` and surface that to the user:
 > "No hash provided — using HEAD (`$FULL_HASH`)."
 
-**Claude Desktop:** ask the user for the full or short commit hash before proceeding.
-
 ---
 
 ## Step 2 — Find the issue
-
-**Claude Code:**
 
 Search active issues first, then archive:
 
@@ -58,14 +53,6 @@ if [ -z "$ISSUE_FILE" ]; then
   ISSUE_FILE=$(rg "$HASH" ~/engineering/issues/archive/ -l 2>/dev/null | head -1)
 fi
 ```
-
-**Claude Desktop:** ask the user to run:
-
-```bash
-rg "<hash>" ~/engineering/issues/ ~/engineering/issues/archive/ -l
-```
-
-And paste the result.
 
 ---
 
@@ -78,7 +65,8 @@ Read the file. Extract and present:
 - `id` and `title` from frontmatter
 - `## Objective` — full text
 - `## Scope` — full text
-- The specific task line(s) containing `$HASH` — highlight this as the task that produced the commit
+- The specific task line(s) containing `$HASH` — highlight this as the task that
+  produced the commit
 - `### Facts` — list of wiki links (used in Step 4)
 
 **If no issue file was found:**
@@ -92,8 +80,6 @@ Proceed to Step 5 (git note) with whatever is available.
 ---
 
 ## Step 4 — Resolve linked facts
-
-**Claude Code:**
 
 Parse the wiki links from `### Facts`:
 
@@ -114,22 +100,12 @@ Do not present the full fact file verbatim — summarize if there are more than 
 
 **If `### Facts` is empty or absent:** skip this step silently.
 
-**Claude Desktop:** ask the user to run:
-
-```bash
-rg '\[\[FACT-[^\]]+\]\]' <issue-file> -o
-```
-
-And retrieve the fact files manually from `$HOME/engineering/facts/`.
-
 ---
 
 ## Step 5 — Read the semantic git note
 
-**Claude Code:**
-
 ```bash
-git notes show "$FULL_HASH" 2>/dev/null
+GIT_NOTE=$(git notes show "$FULL_HASH" 2>/dev/null)
 ```
 
 If output is non-empty, present the note as-is under a "Git note" heading.
@@ -137,13 +113,34 @@ If output is non-empty, present the note as-is under a "Git note" heading.
 If empty:
 > "No git note attached to this commit. The commit may predate the workflow system."
 
-**Claude Desktop:** ask the user to run:
+---
+
+## Step 6 — Retrieve the SESSION.md
+
+Extract the session slug from the git note:
 
 ```bash
-git notes show <full-hash>
+SESSION_SLUG=$(printf '%s' "$GIT_NOTE" | rg "^Session: (.+)" -r '$1')
 ```
 
-And paste the output.
+If `SESSION_SLUG` is empty, note:
+> "No Session: reference in this git note. Commit predates session tracking."
+Skip to output.
+
+Derive the sessions branch name and read the document:
+
+```bash
+SESSIONS_BRANCH=$(git config user.name \
+  | tr '[:upper:]' '[:lower:]' \
+  | tr -cs 'a-z0-9' '-' \
+  | sed 's/-*$/-/;s/$/sessions/')
+
+SESSION_DOC=$(git show "${SESSIONS_BRANCH}:${SESSION_SLUG}/SESSION.md" 2>/dev/null)
+```
+
+If `SESSION_DOC` is empty:
+> "Session slug `$SESSION_SLUG` not found on `$SESSIONS_BRANCH`. Branch may not
+> have been pushed to this machine."
 
 ---
 
@@ -172,9 +169,13 @@ Present results in this order, omitting sections that yielded nothing:
 
 ### Git note
 <note content>
+
+### Session
+**<session-slug>**
+<Objective, Key decisions, Outcome from SESSION.md>
 ```
 
-If nothing was found (no issue, no note), say so plainly and suggest:
+If nothing was found (no issue, no note, no session), say so plainly and suggest:
 > "Run `git log --oneline -20` to confirm the hash is correct, or check if the commit
 > was made outside a tracked session."
 
@@ -183,9 +184,11 @@ If nothing was found (no issue, no note), say so plainly and suggest:
 ## Rules
 
 - Never invent context. If a section is absent, say it is absent.
-- Do not read `$HOME/engineering/issues/archive/` proactively — only fall back to it if
-  the hash is not found in active issues.
+- Do not read `$HOME/engineering/issues/archive/` proactively — only fall back to it
+  if the hash is not found in active issues.
 - Do not present the full issue file verbatim. Extract only the sections above.
 - Wiki link resolution is mandatory when `### Facts` is non-empty. Do not skip it.
-- If multiple issue files match the hash (should not happen), present the most recent one
-  and flag the collision to the user.
+- Session retrieval is mandatory when `Session:` is present in the git note. Do not
+  skip it.
+- If multiple issue files match the hash (should not happen), present the most recent
+  one and flag the collision to the user.
