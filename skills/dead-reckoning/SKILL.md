@@ -106,6 +106,66 @@ Once confirmed, write it in `**Central question:**` at the top of the spike docu
 
 Wait for confirmation or redirection.
 
+**Run git context retrieval on the declared entry points.**
+
+Read `references/git-context-retrieval.md` and execute the full protocol against
+the entry point paths. This runs before any code is read.
+
+```bash
+# Step A — commits touching the entry point (last 20)
+COMMITS=$(git log --format="%H" -20 -- <entry-point-path>)
+
+# Step B — read git notes
+NOTES=$(echo "$COMMITS" | while read h; do
+  note=$(git notes show "$h" 2>/dev/null)
+  [ -z "$note" ] && continue
+  short=$(git rev-parse --short "$h")
+  printf "### %s\n%s\n\n" "$short" "$note"
+done)
+
+# Step C — resolve Session: references
+SESSION_SLUGS=$(printf '%s' "$NOTES" | rg "^Session: (.+)" -r '$1' | sort -u)
+SESSIONS_BRANCH=$(git config user.name \
+  | tr '[:upper:]' '[:lower:]' \
+  | tr -cs 'a-z0-9' '-' \
+  | sed 's/-*$/-/;s/$/sessions/')
+SESSION_DOCS=$(echo "$SESSION_SLUGS" | while read slug; do
+  [ -z "$slug" ] && continue
+  doc=$(git show "${SESSIONS_BRANCH}:${slug}/SESSION.md" 2>/dev/null)
+  [ -z "$doc" ] && continue
+  printf "### %s\n%s\n\n" "$slug" "$doc"
+done)
+```
+
+Surface the findings to the human before traversal begins:
+
+```
+Git context — <N> commits, <M> session(s) found
+
+Commits:
+  <short-hash> — <Task field>
+  ...
+
+Sessions:
+  <slug>: <Objective> | Outcome: <outcome>
+  Key decisions: ...
+```
+
+If the recovered context directly addresses the central question or reveals a
+prior investigation of the same area, surface this explicitly:
+
+> "Session [slug] already investigated this path and concluded [outcome].
+> Should we treat that as a starting axiom, or verify it fresh?"
+
+Wait for the human's decision before proceeding to traversal.
+
+Write the git context findings into `## Traversal map` in the spike document
+before Phase 2 begins — they are the known starting state, not a traversal result.
+
+If no notes and no sessions are found, note this once and proceed:
+> "No git context found for this path — commits predate the workflow system or
+> were made outside tracked sessions. Starting traversal from scratch."
+
 If in Plan Mode, update the plan to reflect Phase 1 complete and Phase 2 in progress.
 
 ## Phase 2 — Traverse
