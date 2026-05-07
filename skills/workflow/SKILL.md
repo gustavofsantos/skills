@@ -166,7 +166,7 @@ do not guess.
    SESSIONS_BRANCH=$(git config user.name \
      | tr '[:upper:]' '[:lower:]' \
      | tr -cs 'a-z0-9' '-' \
-     | sed 's/-*$/-/;s/$/sessions/')
+     | sed 's/-*$//;s/$/\/sessions/')
 
    LAST_SESSION=$(git show "${SESSIONS_BRANCH}" 2>/dev/null \
      | git ls-tree "${SESSIONS_BRANCH}" 2>/dev/null \

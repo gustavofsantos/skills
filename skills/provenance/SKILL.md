@@ -133,7 +133,7 @@ Derive the sessions branch name and read the document:
 SESSIONS_BRANCH=$(git config user.name \
   | tr '[:upper:]' '[:lower:]' \
   | tr -cs 'a-z0-9' '-' \
-  | sed 's/-*$/-/;s/$/sessions/')
+  | sed 's/-*$//;s/$/\/sessions/')
 
 SESSION_DOC=$(git show "${SESSIONS_BRANCH}:${SESSION_SLUG}/SESSION.md" 2>/dev/null)
 ```
