@@ -16,11 +16,11 @@ allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(cat:*) Bash
 
 ## Currently active issues
 
-!`rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null || echo '(none active)'`
+!`rg -l '^status: active$' ~/engineering/issues -g '*.md'`
 
-## Inbox count
+## Inbox issues
 
-!`rg -l '^status: inbox$' ~/engineering/issues -g '*.md' 2>/dev/null | wc -l | tr -d ' '`
+!`rg -l '^status: inbox$' ~/engineering/issues -g '*.md'`
 
 ---
 
