@@ -210,13 +210,13 @@ User informs the issue to work on. If not provided, list issues and ask.
 2. **Stamp the session ID into the issue frontmatter.**
 
    The current session ID was injected at session start (look for **Session ID:** in
-   the session context). Use Edit to write it into the issue's `session:` frontmatter
-   field — replace the blank `session:` line with `session: "<session_id>"`.
+   the session context). Use Edit to append it to the `sessions:` frontmatter field —
+   an inline YAML list, e.g. `sessions: ["abc123"]` or `sessions: ["abc123", "def456"]`.
 
    This links the issue to the session so the UserPromptSubmit hook injects resume
    context on every subsequent turn.
 
-   If the `session:` field already contains this session's ID, skip this step.
+   If the session ID is already in the `sessions:` list, skip this step.
 
 3. **Read the issue** — objective, scope, context, open questions, tasks.
 

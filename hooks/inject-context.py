@@ -35,6 +35,27 @@ def _fm_get(frontmatter: str, key: str) -> str:
     return ""
 
 
+def _fm_get_list(frontmatter: str, key: str) -> list[str]:
+    """Extract an inline YAML list for `key: [...]` from raw YAML text."""
+    for line in frontmatter.splitlines():
+        if line.startswith(f"{key}:"):
+            value = line[len(key) + 1:].strip()
+            if not value.startswith("["):
+                return []
+            inner = value[1:-1]  # strip [ ]
+            if not inner.strip():
+                return []
+            items = []
+            for item in inner.split(","):
+                item = item.strip()
+                if len(item) >= 2 and item[0] == item[-1] and item[0] in ('"', "'"):
+                    item = item[1:-1]
+                if item:
+                    items.append(item)
+            return items
+    return []
+
+
 def find_issue_for_session(session_id: str) -> dict | None:
     if not ISSUES_DIR.is_dir():
         return None
@@ -49,7 +70,7 @@ def find_issue_for_session(session_id: str) -> dict | None:
         if fm is None:
             continue
 
-        if _fm_get(fm, "session") != session_id:
+        if session_id not in _fm_get_list(fm, "sessions"):
             continue
 
         return {
