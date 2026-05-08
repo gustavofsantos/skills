@@ -126,8 +126,10 @@ report enters the main session.
 | `deep-review` | [deep-review](skills/deep-review/SKILL.md) | Loads ~400 lines of analytical references + the full diff. Runs on `opus`. Concurrent reviews possible. |
 | `provenance` | [provenance](skills/provenance/SKILL.md) | Pulls fact files, git notes, and SESSION.md content into a single read — keeps them out of main context. |
 
-Subagents need the `Agent` tool. On Cursor / Claude Desktop, the dispatch
-shim falls back to reading the agent file and executing the protocol inline.
+Subagents need the `Agent` tool — Claude Code is the canonical runtime for
+the dispatch shims. Hosts without `Agent` will see a SKILL.md that reads
+like a stub; for those environments, read the matching `agents/<name>.md`
+file directly to run the protocol inline.
 
 ## Hooks
 

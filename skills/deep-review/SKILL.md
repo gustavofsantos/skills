@@ -63,12 +63,6 @@ that's only useful for the review itself.
    - **Red, structural problems beyond scope** → propose creating a new
      inbox issue via `workflow`.
 
-## Fallback (no Agent tool — Cursor / Claude Desktop)
-
-If the Agent tool is unavailable in your environment, read the full protocol
-at `agents/deep-review.md` within this plugin and execute it inline. The
-protocol is identical; only the isolation is lost.
-
 ## Why a subagent
 
 - Phase 2 loads 5 reference files (~400 lines) — kept out of main context.

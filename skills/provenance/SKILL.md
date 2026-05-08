@@ -54,12 +54,6 @@ fact files and session documents out of the main context.
      session), suggest `dead-reckoning` for a forward investigation if the
      human wants to reconstruct intent from the code.
 
-## Fallback (no Agent tool — Cursor / Claude Desktop)
-
-If the Agent tool is unavailable, read the full protocol at
-`agents/provenance.md` within this plugin and execute it inline. The
-protocol is identical; only the isolation is lost.
-
 ## Why a subagent
 
 - Pulls in fact files, git notes, and SESSION.md content that are only

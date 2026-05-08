@@ -24,14 +24,6 @@ This skill is not dead-reckoning. It has no central question. It surveys terrain
 
 ---
 
-## Requires Claude Code
-
-This skill requires bash tools for file discovery and qmd for knowledge correlation.
-It cannot run meaningfully on Claude Desktop. If bash is unavailable, stop and tell
-the user to run this from Claude Code.
-
----
-
 ## Storage layout
 
 Follows the standard layout from the `knowledge` skill:
