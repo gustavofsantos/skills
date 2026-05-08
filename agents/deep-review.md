@@ -192,7 +192,7 @@ Overall: Green | Yellow | Red
 Must fix before merge: [blocking issues or "none"]
 Consider: [non-blocking improvements]
 Looks good: [specific things done well]
-Chain pointer: [if Red and fixable in scope → suggest incremental-refactor;
+Chain pointer: [if Red and fixable in scope → suggest design-constraints (refactor);
                if structural problems beyond scope → suggest a new inbox issue;
                if Green/Yellow → human can move issue to done]
 ```

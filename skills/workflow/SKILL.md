@@ -34,12 +34,11 @@ single source of truth for which skill handles which moment:
 | Thinking session needs depth | `thinking-lenses` (offered by thinking-partner) |
 | Open questions remain before execution | `dead-reckoning` |
 | Unfamiliar codebase, no facts yet | `survey` (run before `dead-reckoning`) |
-| New abstraction or API surface to design | `interface-design` |
-| Module boundaries / coupling questions | `bounded-contexts` |
+| New abstraction, API surface, or module boundary to design | `design` (modes: `boundary`, `abstraction`) |
 | Implementation with new behavior | `test-design` (writes contract into issue) → `tdd-design` |
 | GREEN phase, overthinking the implementation | `shameless-green` |
-| Refactor without behavior change | `incremental-refactor` constraints (in issue Context) |
-| New feature, unsure where to start | `evolutionary-design` constraints (in issue Context) |
+| Refactor without behavior change | `design-constraints` (mode: `refactor`) — paste block into issue Context |
+| New feature, unsure where to start | `design-constraints` (mode: `evolutionary`) — paste block into issue Context |
 | Review before PR | `deep-review` (dispatches to subagent) |
 | Need to validate a feature in an environment | `playbook-builder` |
 | Discover a fact worth keeping | `knowledge` |

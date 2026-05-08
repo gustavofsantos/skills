@@ -66,18 +66,16 @@ npx skills remove -g        # uninstall
 |---|---|
 | [thinking-partner](skills/thinking-partner/SKILL.md) | Socratic thinking partner for exploring problems deeply before delegating to an executor. |
 | [thinking-lenses](skills/thinking-lenses/SKILL.md) | Structured analytical lenses for reaching specific kinds of depth during a thinking session. |
-| [bounded-contexts](skills/bounded-contexts/SKILL.md) | Applies bounded context and loose coupling principles when designing or reviewing module boundaries, service contracts, and component interactions. |
-| [interface-design](skills/interface-design/SKILL.md) | Applies Go-derived interface design principles to design or review abstractions in any language — Go, Clojure, Java, Kotlin, TypeScript, and Python. |
-| [evolutionary-design](skills/evolutionary-design/SKILL.md) | Produces design constraints for building new features or systems incrementally, avoiding big-bang design via a tracer-bullet approach. |
+| [design](skills/design/SKILL.md) | Interactive design analysis — `boundary` mode for module/service boundaries and coupling, `abstraction` mode for interfaces / protocols / traits across Go, Clojure, Java, Kotlin, TypeScript, and Python. |
+| [design-constraints](skills/design-constraints/SKILL.md) | Constraint blocks to paste into an issue's `## Context` — `evolutionary` mode for tracer-bullet greenfield work, `refactor` mode for behavior-preserving incremental change. |
 
 ### TDD Cycle
 
 | Skill | Description |
 |---|---|
-| [test-design](skills/test-design/SKILL.md) | Collaborative specification protocol to define the behavioral contract of a unit before any code is written. |
-| [tdd-design](skills/tdd-design/SKILL.md) | Drives implementation using Test-Driven Development as a design tool, enforcing the red-green-refactor cycle and using test friction as a design signal. |
+| [test-design](skills/test-design/SKILL.md) | Collaborative specification protocol that writes the behavioural contract directly into the active issue's `## Behavioral contract` section. Feeds tdd-design. |
+| [tdd-design](skills/tdd-design/SKILL.md) | Drives implementation using Test-Driven Development as a design tool, enforcing the red-green-refactor cycle and using test friction as a design signal. Reads cases from the issue's contract section. |
 | [shameless-green](skills/shameless-green/SKILL.md) | Redirects to the simplest, most obvious code that makes a failing test pass during the GREEN phase of TDD — make it work first, make it clean after. |
-| [incremental-refactor](skills/incremental-refactor/SKILL.md) | Produces constraints for safe, incremental refactoring — behavior-preserving steps, one transformation at a time, no scope expansion. |
 
 ### Review & Validation
 
