@@ -35,7 +35,9 @@ skills/             ← one subdirectory per skill
     scripts/        ← optional Python scripts invoked by the skill
     references/     ← optional reference documents the skill reads
     examples/       ← optional worked examples
-agents/             ← custom agents (currently empty placeholder)
+agents/             ← custom subagents (one .md file per subagent)
+  deep-review.md    ← read-only code review subagent (high effort, opus model)
+  provenance.md     ← commit → intent traversal subagent
 commands/           ← custom slash commands (currently empty placeholder)
 hooks/              ← plugin-level Claude Code hooks (proactive recall)
   hooks.json        ← hook config (SessionStart + UserPromptSubmit)
@@ -86,6 +88,7 @@ Instructions for the AI...
 - Skills are designed to be invoked from Claude Code (bash tool available) or Claude Desktop (no bash tool). Skills that use bash must detect the environment and fall back gracefully for Desktop.
 - The `workflow` skill is the orchestrator — it coordinates all other skills. New issues, session starts, and context recovery all route through it first.
 - The plugin ships **hooks** in `hooks/` that fire on SessionStart (engineering vault state) and UserPromptSubmit (skill-trigger pattern detection). They are configured in `hooks/hooks.json` and only run in Claude Code. They make recall proactive — but the skill bodies still carry the canonical `when_to_use` triggers as a fallback for Cursor / Claude Desktop installations.
+- **Subagent dispatch pattern.** Read-only, batch-style skills (`deep-review`, `provenance`) are slim dispatch shims — they call the Agent tool with the matching `subagent_type`, surface the subagent's report, and act on its chain pointer. The full protocol lives in `agents/<name>.md` as the subagent's system prompt; this keeps the heavy reference loading and intermediate file reads out of the main session context. When adding a new read-only skill, prefer this pattern: SKILL.md = trigger + dispatch, `agents/<name>.md` = canonical protocol. Cursor / Claude Desktop installations fall back to reading `agents/<name>.md` and executing it inline (the SKILL.md body documents this fallback).
 
 ## Engineering workspace (not in this repo)
 

@@ -40,10 +40,10 @@ single source of truth for which skill handles which moment:
 | GREEN phase, overthinking the implementation | `shameless-green` |
 | Refactor without behavior change | `incremental-refactor` constraints (in issue Context) |
 | New feature, unsure where to start | `evolutionary-design` constraints (in issue Context) |
-| Review before PR | `deep-review` |
+| Review before PR | `deep-review` (dispatches to subagent) |
 | Need to validate a feature in an environment | `playbook-builder` |
 | Discover a fact worth keeping | `knowledge` |
-| Investigate why a commit was made | `provenance` |
+| Investigate why a commit was made | `provenance` (dispatches to subagent) |
 | Jira ticket ID or URL appears | `jira-context` (run immediately, do not ask) |
 | Wrapping up the working session | `session-close` |
 
