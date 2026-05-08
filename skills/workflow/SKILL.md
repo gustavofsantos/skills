@@ -97,6 +97,60 @@ under one prefix so paths are predictable across skills.
 
 ---
 
+## Triviality gate — bow out when the work doesn't deserve orchestration
+
+Not every request is an issue. The orchestration chain (story → plan →
+test-design → tdd-design → deep-review) is theatre when the work is
+trivially scoped. Skip the chain when **all** of the following hold:
+
+- The request is bounded to one file (or a small, obviously related set).
+- The change is reversible in a single commit (no migrations, no schema
+  changes, no public-API breaks).
+- No new behaviour is being added — typo fix, rename, comment update,
+  obvious mechanical refactor with tests already green.
+- The user did not explicitly ask for an issue.
+
+In that case, **execute directly**. Do not create an issue file. Do not
+invoke `user-story-builder`, `user-story-planner`, or `test-design`. The
+existing repo's git history and (if a session ends up worth recording)
+`session-close` are sufficient memory.
+
+When in doubt, **ask one short question**:
+> "This looks small enough to do directly without an issue — sound right,
+> or do you want it tracked?"
+
+If the user says "track it", proceed with the full Phase 1 planning flow.
+If they say "just do it", execute and skip the orchestration. Don't
+default to creating issues for trivial work.
+
+---
+
+## Project-level recipes win over plugin skills
+
+Before dispatching to any plugin skill, scan the current project's
+`CLAUDE.md` (root of the repo, or `.claude/CLAUDE.md`):
+
+```bash
+fd -t f -d 2 'CLAUDE\.md' . 2>/dev/null | head -3
+```
+
+The plugin's skills are general-purpose. The project's `CLAUDE.md`
+documents tools the plugin can't see — internal CLIs, deploy commands,
+test runners, company-property MCP servers, custom fixtures. **When a
+project recipe describes how to do the task at hand, follow it instead
+of the plugin's general protocol.** The project knows its own runtime;
+the plugin doesn't.
+
+Concrete priority order:
+
+1. Direct project recipe in `CLAUDE.md` — use as written.
+2. Plugin skill that fits — invoke as the chain table directs.
+3. Generic engineering judgement — when neither fits.
+
+This rule applies at session start, before knowledge retrieval.
+
+---
+
 ## Issue format
 
 See [references/issue-template.md](references/issue-template.md) for the canonical template with field reference.
