@@ -101,8 +101,14 @@ Skills operate against `~/engineering/` — a separate directory that is the use
   facts/           ← atomic knowledge facts (see knowledge skill)
   spikes/          ← investigation narratives (see dead-reckoning skill)
   terms/<domain>/  ← business domain term definitions (see knowledge skill)
+  playbooks/       ← validation playbooks (see playbook-builder skill)
+  thinking/        ← thinking-partner progress.md and flush.md, by topic
   .counters/       ← sequential ID files: issues, facts, spikes, terms
 ```
+
+This is the **single root** for long-lived AI-assisted engineering state.
+There is no parallel `~/.knowledge/` or `~/.config/shared-memory/` tree —
+every artifact lives under one prefix so paths are predictable across skills.
 
 The `qmd` CLI indexes this directory for semantic search. After writing any fact, spike, or term: `qmd update && qmd embed`.
 
