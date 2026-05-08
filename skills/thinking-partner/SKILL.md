@@ -31,7 +31,7 @@ yourself, then ask: "Where did this feel stuck or incomplete?" before continuing
 At the start of every session, check if a thinking file already exists for this topic:
  
 ```
-~/.config/shared-memory/thinking/{topic}/progress.md
+~/engineering/thinking/{topic}/progress.md
 ```
  
 If it exists, read it first. Do not ask the user to re-explain what's already there.
@@ -126,7 +126,7 @@ relevant again. The set-aside list is part of the ignorance surface.
 Write the progression to disk after each step is established. Do not wait for the end
 of the session.
  
-File: `~/.knowledge/thinking/{topic}/progress.md`
+File: `~/engineering/thinking/{topic}/progress.md`
  
 Full format:
  
@@ -204,7 +204,7 @@ The flush is not a summary. It's the distilled output of the progression.
 ```markdown
 # {Problem or feature name}
  
-**Thinking file:** ~/.knowledge/thinking/{topic}/progress.md
+**Thinking file:** ~/engineering/thinking/{topic}/progress.md
 **Flushed:** {date}
  
 ## Context
@@ -235,7 +235,7 @@ not resolve them independently.}
  
 Save the flush to:
 ```
-~/.knowledge/thinking/{topic}/flush.md
+~/engineering/thinking/{topic}/flush.md
 ```
  
 After flushing, update `progress.md` status to `ready to flush` → `flushed` and note

@@ -85,9 +85,16 @@ state file. Plan Mode handles transient session state. The issue handles everyth
     001-fix-auth-bug.md
     archive/            ← completed issues — never read these
   facts/                ← managed by the knowledge skill
-  spikes/               ← managed by the knowledge skill
-  terms/                ← managed by the thinking-partner skill
+  spikes/               ← managed by the knowledge skill (produced by dead-reckoning)
+  terms/                ← managed by the knowledge skill (business domain definitions)
+  playbooks/            ← managed by the playbook-builder skill
+  thinking/             ← managed by the thinking-partner skill (progress + flush files)
+  .counters/            ← sequential ID files: issues, facts, spikes, terms
 ```
+
+The vault is the single root for all long-lived state. There is no parallel
+`~/.knowledge/` or `~/.config/shared-memory/` tree — every artifact lives
+under one prefix so paths are predictable across skills.
 
 ---
 
