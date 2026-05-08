@@ -11,26 +11,33 @@
 
 set -u
 
+# Read hook payload from stdin; extract session_id if jq is available
+_payload=$(cat 2>/dev/null || true)
+session_id=""
+if [ -n "$_payload" ] && command -v jq >/dev/null 2>&1; then
+    session_id=$(printf '%s' "$_payload" | jq -r '.session_id // empty' 2>/dev/null || true)
+fi
+
 VAULT="${HOME}/engineering"
 ISSUES_DIR="${VAULT}/issues"
 
-[ -d "$ISSUES_DIR" ] || exit 0
-
 # Find all in-flight issues (presence in issues/ = active; archive/ = done)
 issue_files=""
-if command -v fd >/dev/null 2>&1; then
-    issue_files=$(fd -t f -e md . "$ISSUES_DIR" 2>/dev/null | grep -v '/archive/' | sort || true)
-elif command -v find >/dev/null 2>&1; then
-    issue_files=$(find "$ISSUES_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | sort || true)
-fi
-
 inbox_count=0
-if command -v rg >/dev/null 2>&1; then
-    inbox_count=$(rg -l '^status: inbox$' "$ISSUES_DIR" -g '*.md' 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+if [ -d "$ISSUES_DIR" ]; then
+    if command -v fd >/dev/null 2>&1; then
+        issue_files=$(fd -t f -e md . "$ISSUES_DIR" 2>/dev/null | grep -v '/archive/' | sort || true)
+    elif command -v find >/dev/null 2>&1; then
+        issue_files=$(find "$ISSUES_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | sort || true)
+    fi
+
+    if command -v rg >/dev/null 2>&1; then
+        inbox_count=$(rg -l '^status: inbox$' "$ISSUES_DIR" -g '*.md' 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+    fi
 fi
 
 # Nothing to surface
-if [ -z "$issue_files" ] && [ "${inbox_count:-0}" -eq 0 ]; then
+if [ -z "$issue_files" ] && [ "${inbox_count:-0}" -eq 0 ] && [ -z "${session_id:-}" ]; then
     exit 0
 fi
 
@@ -66,6 +73,10 @@ fi
 if [ "${inbox_count:-0}" -gt 0 ]; then
     [ -n "$issue_files" ] && printf "\n"
     printf "**Inbox:** %s issue(s) waiting to be planned.\n" "$inbox_count"
+fi
+
+if [ -n "${session_id:-}" ]; then
+    printf "\n---\n**Session ID:** \`%s\`\n" "$session_id"
 fi
 
 exit 0

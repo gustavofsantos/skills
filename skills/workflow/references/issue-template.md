@@ -5,6 +5,7 @@
 id: "{id}"
 title: "{title}"
 branch:
+session:
 tags: []
 created: {today}
 updated: {today}
