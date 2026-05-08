@@ -36,7 +36,7 @@ single source of truth for which skill handles which moment:
 | Unfamiliar codebase, no facts yet | `survey` (run before `dead-reckoning`) |
 | New abstraction or API surface to design | `interface-design` |
 | Module boundaries / coupling questions | `bounded-contexts` |
-| Implementation with new behavior | `test-design` → `tdd-design` |
+| Implementation with new behavior | `test-design` (writes contract into issue) → `tdd-design` |
 | GREEN phase, overthinking the implementation | `shameless-green` |
 | Refactor without behavior change | `incremental-refactor` constraints (in issue Context) |
 | New feature, unsure where to start | `evolutionary-design` constraints (in issue Context) |

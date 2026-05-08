@@ -97,7 +97,9 @@ Choose based on what already exists:
 
 ### Protocol B — From contract
 
-1. Read the `test-design` contract artifact.
+1. Read the active issue file. Locate its `## Behavioral contract` section
+   (the contract lives there since the contract→issue merge — there is no
+   separate `~/.knowledge/contracts/` file anymore).
 2. Map to playbook sections:
 
    | Contract element | Playbook section |
