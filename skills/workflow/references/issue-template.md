@@ -23,8 +23,8 @@ One sentence. What "done" looks like when this issue closes.
 ## Context
 
 Relevant background. Links to Jira, Sentry, docs, prior decisions.
-If design constraints apply (evolutionary-design, incremental-refactor),
-state them here as named constraints — not as prose.
+If design constraints apply, paste the relevant `design-constraints` block
+(mode: `evolutionary` or `refactor`) here as a named section — not as prose.
 
 ## Open questions
 

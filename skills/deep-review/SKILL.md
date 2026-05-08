@@ -58,8 +58,8 @@ that's only useful for the review itself.
 4. **Act on the chain pointer** in the report's summary:
    - **Green / Yellow** → tell the human the issue is ready to ship; the human
      (not the agent) sets `status: done` and archives the issue.
-   - **Red, fixable in scope** → propose `incremental-refactor` for a
-     constrained fix pass.
+   - **Red, fixable in scope** → propose pasting the `design-constraints`
+     `refactor` block into the issue Context for a constrained fix pass.
    - **Red, structural problems beyond scope** → propose creating a new
      inbox issue via `workflow`.
 
