@@ -6,7 +6,7 @@
 #
 # Safety:
 #   - Never fails the session (always exit 0)
-#   - Tolerates missing ~/engineering/, missing rg, missing git
+#   - Tolerates missing ~/engineering/, missing fd/rg/git
 #   - No network calls, no slow operations
 
 set -u
@@ -14,67 +14,57 @@ set -u
 VAULT="${HOME}/engineering"
 ISSUES_DIR="${VAULT}/issues"
 
-# If there's no vault, stay silent. This is normal on a fresh machine.
 [ -d "$ISSUES_DIR" ] || exit 0
 
-# Find active issue (single source of truth: status: active in frontmatter)
-active_file=""
+# Find all in-flight issues (presence in issues/ = active; archive/ = done)
+issue_files=""
+if command -v fd >/dev/null 2>&1; then
+    issue_files=$(fd -t f -e md . "$ISSUES_DIR" 2>/dev/null | grep -v '/archive/' | sort || true)
+elif command -v find >/dev/null 2>&1; then
+    issue_files=$(find "$ISSUES_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | sort || true)
+fi
+
 inbox_count=0
 if command -v rg >/dev/null 2>&1; then
-    active_file=$(rg -l '^status: active$' "$ISSUES_DIR" -g '*.md' --max-count=1 2>/dev/null | head -1 || true)
     inbox_count=$(rg -l '^status: inbox$' "$ISSUES_DIR" -g '*.md' 2>/dev/null | wc -l | tr -d ' ' || echo 0)
-else
-    # Fallback to grep
-    active_file=$(grep -l '^status: active$' "$ISSUES_DIR"/*.md 2>/dev/null | head -1 || true)
-    inbox_count=$(grep -l '^status: inbox$' "$ISSUES_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ' || echo 0)
 fi
 
 # Nothing to surface
-if [ -z "$active_file" ] && [ "${inbox_count:-0}" -eq 0 ]; then
+if [ -z "$issue_files" ] && [ "${inbox_count:-0}" -eq 0 ]; then
     exit 0
 fi
 
-# Header — only printed when we have something to say
 printf "## Engineering vault — current state\n\n"
 
-if [ -n "$active_file" ]; then
-    title=$(grep -E '^title:' "$active_file" 2>/dev/null | head -1 | sed -e 's/^title: *//' -e 's/^"//' -e 's/"$//')
-    id=$(grep -E '^id:' "$active_file" 2>/dev/null | head -1 | sed -e 's/^id: *//' -e 's/^"//' -e 's/"$//')
-    pending=$(grep -c '^- \[ \]' "$active_file" 2>/dev/null || echo 0)
-    done_count=$(grep -c '^- \[x\]' "$active_file" 2>/dev/null || echo 0)
+if [ -n "$issue_files" ]; then
+    issue_count=$(echo "$issue_files" | grep -c '.' 2>/dev/null || echo 0)
 
-    printf "**Active issue:** %s — %s\n" "${id:-?}" "${title:-(untitled)}"
-    printf "  File: \`%s\`\n" "$active_file"
-    printf "  Tasks: %s done, %s pending\n\n" "$done_count" "$pending"
-
-    # Try to surface the last session for this issue, if a sessions branch exists.
-    if command -v git >/dev/null 2>&1 && [ -n "${id:-}" ]; then
-        # Only attempt if we are inside a git repo
-        if git rev-parse --git-dir >/dev/null 2>&1; then
-            sessions_branch=$(git config user.name 2>/dev/null \
-                | tr '[:upper:]' '[:lower:]' \
-                | tr -cs 'a-z0-9' '-' \
-                | sed -e 's/-*$//' -e 's/$/\/sessions/')
-            if [ -n "$sessions_branch" ] && git rev-parse --verify "$sessions_branch" >/dev/null 2>&1; then
-                last_slug=$(git ls-tree -r --name-only "$sessions_branch" 2>/dev/null \
-                    | grep "^${id}-" \
-                    | sed 's|/SESSION.md$||' \
-                    | sort -u \
-                    | tail -1 || true)
-                if [ -n "${last_slug:-}" ]; then
-                    printf "  Last session: \`%s\` (on branch \`%s\`)\n\n" "$last_slug" "$sessions_branch"
-                fi
-            fi
-        fi
+    if [ "$issue_count" -eq 1 ]; then
+        f="$issue_files"
+        title=$(grep -E '^title:' "$f" 2>/dev/null | head -1 | sed -e 's/^title: *//' -e 's/^"//' -e 's/"$//')
+        id=$(grep -E '^id:' "$f" 2>/dev/null | head -1 | sed -e 's/^id: *//' -e 's/^"//' -e 's/"$//')
+        pending=$(grep -c '^- \[ \]' "$f" 2>/dev/null || echo 0)
+        done_count=$(grep -c '^- \[x\]' "$f" 2>/dev/null || echo 0)
+        printf "**Current issue:** %s — %s\n" "${id:-?}" "${title:-(untitled)}"
+        printf "  File: \`%s\`\n" "$f"
+        printf "  Tasks: %s done, %s pending\n\n" "$done_count" "$pending"
+    else
+        printf "**Current issues (%s):**\n\n" "$issue_count"
+        echo "$issue_files" | while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            title=$(grep -E '^title:' "$f" 2>/dev/null | head -1 | sed -e 's/^title: *//' -e 's/^"//' -e 's/"$//')
+            id=$(grep -E '^id:' "$f" 2>/dev/null | head -1 | sed -e 's/^id: *//' -e 's/^"//' -e 's/"$//')
+            pending=$(grep -c '^- \[ \]' "$f" 2>/dev/null || echo 0)
+            printf "  - %s — %s (%s pending)\n" "${id:-?}" "${title:-(untitled)}" "$pending"
+        done
+        printf "\n"
     fi
 
     printf "**Recall:** invoke the \`workflow\` skill to resume. Read the issue file before any execution.\n"
 fi
 
 if [ "${inbox_count:-0}" -gt 0 ]; then
-    if [ -n "$active_file" ]; then
-        printf "\n"
-    fi
+    [ -n "$issue_files" ] && printf "\n"
     printf "**Inbox:** %s issue(s) waiting to be planned.\n" "$inbox_count"
 fi
 

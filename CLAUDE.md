@@ -37,11 +37,12 @@ skills/             ← one subdirectory per skill
     examples/       ← optional worked examples
 agents/             ← custom subagents (one .md file per subagent)
   deep-review.md    ← read-only code review subagent (high effort, opus model)
-  provenance.md     ← commit → intent traversal subagent
+  dead-reckoning.md ← read-only code investigation subagent
+  survey.md         ← read-only repository discovery subagent
 commands/           ← custom slash commands (currently empty placeholder)
 hooks/              ← plugin-level Claude Code hooks (proactive recall)
   hooks.json        ← hook config (SessionStart + UserPromptSubmit)
-  session-start.sh  ← surfaces active issue / inbox / last session at start
+  session-start.sh  ← surfaces current issues and inbox count at session start
   inject-context.py ← regex pattern detector that injects skill suggestions
 .claude-plugin/
   plugin.json       ← plugin name, version, author metadata
@@ -51,8 +52,6 @@ hooks/              ← plugin-level Claude Code hooks (proactive recall)
   setup-hooks.sh    ← copies dev hooks from .scripts/hooks/ into .git/hooks/
   hooks/
     pre-commit      ← auto-bumps plugin patch version on every commit
-bin/
-  write-session-branch  ← git-plumbing writer for the personal sessions branch
 ```
 
 ## Skill format
@@ -83,12 +82,13 @@ Instructions for the AI...
 
 - **Skills do not shell out to custom Python scripts** for reading or writing the engineering vault (`~/engineering/`). Use the native Read / Write / Edit / Bash tools directly. Scripts are reserved for genuine external integrations — e.g. `skills/jira-context/scripts/jira-ticket-context.py` for Jira/ADF parsing. When a script is needed, invoke it via `python3 ${CLAUDE_SKILL_DIR}/scripts/<script>.py` so the path resolves under plugin, personal, and Cursor installations alike.
 - **`${CLAUDE_SKILL_DIR}`** resolves the skill's installation directory across all three distribution methods (plugin, personal symlinks, Cursor copies). Use it instead of `$CLAUDE_PLUGIN_ROOT/skills/<name>`.
-- **Search conventions:** use `fd` and `rg` for file listing and content search throughout skill bodies. They're faster on large trees and consistent across the user's machines. Anchor `rg` patterns to line boundaries when matching YAML frontmatter fields (e.g. `rg -l '^status: active$'`).
+- **Search conventions:** use `fd` and `rg` for file listing and content search throughout skill bodies. They're faster on large trees and consistent across the user's machines. Issue lookup uses `fd -t f -e md . ~/engineering/issues | grep -v '/archive/'` — presence in the directory is the active signal, not a status field.
 - **References** are markdown files the skill explicitly `Read`s at runtime — they are not auto-loaded. The skill SKILL.md must name which references to load and when.
 - Skills target **Claude Code** as the canonical runtime (bash tool, fd, rg, qmd, Agent dispatch). Cursor / Claude Desktop installs work to the extent the host supports the same primitives. Earlier "Desktop fallback" branches that asked the AI to detect environment and produce manual-save markdown were retired — the cognitive cost of every skill body branching on runtime outweighed the marginal utility.
 - The `workflow` skill is the orchestrator — it coordinates all other skills. New issues, session starts, and context recovery all route through it first.
+- **tdd-design** is the single skill for specification + TDD implementation. It runs a behavioral-contract conversation (Phase 1) and immediately starts the red-green-refactor cycle (Phase 2). There is no separate test-design skill.
 - The plugin ships **hooks** in `hooks/` that fire on SessionStart (engineering vault state) and UserPromptSubmit (skill-trigger pattern detection). They are configured in `hooks/hooks.json` and run in Claude Code. The skill bodies' `when_to_use` triggers continue to work when hooks aren't running (e.g., Cursor) — recall is just less proactive.
-- **Subagent dispatch pattern.** Read-only, batch-style skills (`deep-review`, `provenance`) are slim dispatch shims — they call the Agent tool with the matching `subagent_type`, surface the subagent's report, and act on its chain pointer. The full protocol lives in `agents/<name>.md` as the subagent's system prompt; this keeps the heavy reference loading and intermediate file reads out of the main session context. When adding a new read-only skill, prefer this pattern: SKILL.md = trigger + dispatch, `agents/<name>.md` = canonical protocol.
+- **Subagent dispatch pattern.** Read-only, batch-style skills (`deep-review`, `dead-reckoning`, `survey`) are slim dispatch shims — they call the Agent tool with the matching `subagent_type`, surface the subagent's report, and then Read the high-signal files listed in the report. The full protocol lives in `agents/<name>.md` as the subagent's system prompt; this keeps file reads and qmd queries out of the main session context. Subagents are strictly read-only — they do not write facts or spikes. When adding a new read-only skill, prefer this pattern: SKILL.md = trigger + dispatch, `agents/<name>.md` = lean protocol (~100 lines, no interactive loops).
 
 ## Engineering workspace (not in this repo)
 
@@ -96,10 +96,10 @@ Skills operate against `~/engineering/` — a separate directory that is the use
 
 ```
 ~/engineering/
-  issues/          ← active work items (see workflow skill)
+  issues/          ← in-flight work items; presence = active, archive/ = done
     archive/
   facts/           ← atomic knowledge facts (see knowledge skill)
-  spikes/          ← investigation narratives (see dead-reckoning skill)
+  spikes/          ← investigation narratives (produced by dead-reckoning subagent)
   terms/<domain>/  ← business domain term definitions (see knowledge skill)
   playbooks/       ← validation playbooks (see playbook-builder skill)
   thinking/        ← thinking-partner progress.md and flush.md, by topic
@@ -111,6 +111,8 @@ There is no parallel `~/.knowledge/` or `~/.config/shared-memory/` tree —
 every artifact lives under one prefix so paths are predictable across skills.
 
 The `qmd` CLI indexes this directory for semantic search. After writing any fact, spike, or term: `qmd update && qmd embed`.
+
+**Issue lifecycle:** an issue is active when it exists in `issues/` (not `archive/`). No status field is used for routing. Archive when done.
 
 ## Adding a new skill
 
