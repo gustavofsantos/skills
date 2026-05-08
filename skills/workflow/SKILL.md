@@ -11,7 +11,7 @@ when_to_use: >
   ENTRY POINT — it decides which other skills to invoke and chains them together.
 argument-hint: [action] [issue-id]
 arguments: [action, issue_id]
-allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(cat:*) Bash(qmd:*) Bash(git:*)
+allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(git:*) Bash(qmd:*)
 ---
 
 # Workflow
@@ -23,47 +23,33 @@ allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(cat:*) Bash
 
 ## Skill chain
 
-The orchestrator routes work to specialist skills. This table is the
-single source of truth for which skill handles which moment:
-
 | Moment | Skill |
 |---|---|
 | Raw idea needs shaping | `user-story-builder` |
 | Issue needs tasks broken down | `user-story-planner` |
 | Objective is unclear or complex | `thinking-partner` |
 | Thinking session needs depth | `thinking-lenses` (offered by thinking-partner) |
-| Open questions remain before execution | `dead-reckoning` |
-| Unfamiliar codebase, no facts yet | `survey` (run before `dead-reckoning`) |
+| Open questions remain before execution | `dead-reckoning` (dispatches subagent) |
+| Unfamiliar codebase, no facts yet | `survey` (dispatches subagent; run before `dead-reckoning`) |
 | New abstraction, API surface, or module boundary to design | `design` (modes: `boundary`, `abstraction`) |
-| Implementation with new behavior | `test-design` (writes contract into issue) → `tdd-design` |
-| GREEN phase, overthinking the implementation | `shameless-green` |
-| Refactor without behavior change | `design-constraints` (mode: `refactor`) — paste block into issue Context |
-| New feature, unsure where to start | `design-constraints` (mode: `evolutionary`) — paste block into issue Context |
-| Review before PR | `deep-review` (dispatches to subagent) |
+| Implementation with new behavior | `tdd-design` (spec conversation → TDD cycle) |
+| Refactor without behavior change | `design-constraints` (mode: `refactor`) |
+| New feature, unsure where to start | `design-constraints` (mode: `evolutionary`) |
+| Review before PR | `deep-review` (dispatches subagent) |
 | Need to validate a feature in an environment | `playbook-builder` |
 | Discover a fact worth keeping | `knowledge` |
-| Investigate why a commit was made | `provenance` (dispatches to subagent) |
 | Jira ticket ID or URL appears | `jira-context` (run immediately, do not ask) |
-| Wrapping up the working session | `session-close` |
-
-The plugin also ships a SessionStart hook that surfaces the active
-issue, inbox, and last session at session begin — the model receives
-that context automatically and should consult it before asking the
-human "what are we working on".
 
 ---
 
-## Currently active issues
+## Current issues
 
 ```bash
-rg -l '^status: active$' ~/engineering/issues -g '*.md'
+fd -t f -e md . ~/engineering/issues 2>/dev/null | grep -v '/archive/' | sort
 ```
 
-## Inbox issues
-
-```bash
-rg -l '^status: inbox$' ~/engineering/issues -g '*.md'
-```
+One file → use it. Multiple files → list them and ask the human which one
+to work on. Zero files → ask.
 
 ---
 
@@ -87,73 +73,44 @@ state file. Plan Mode handles transient session state. The issue handles everyth
   spikes/               ← managed by the knowledge skill (produced by dead-reckoning)
   terms/                ← managed by the knowledge skill (business domain definitions)
   playbooks/            ← managed by the playbook-builder skill
-  thinking/             ← managed by the thinking-partner skill (progress + flush files)
+  thinking/             ← managed by the thinking-partner skill
   .counters/            ← sequential ID files: issues, facts, spikes, terms
 ```
 
-The vault is the single root for all long-lived state. There is no parallel
-`~/.knowledge/` or `~/.config/shared-memory/` tree — every artifact lives
-under one prefix so paths are predictable across skills.
+---
+
+## Triviality gate
+
+Not every request is an issue. Skip the orchestration chain when **all** hold:
+
+- Bounded to one file (or a small, obviously related set)
+- Reversible in a single commit (no migrations, no schema changes, no public-API breaks)
+- No new behaviour — typo fix, rename, comment update, mechanical refactor with tests green
+- User did not explicitly ask for an issue
+
+In that case, **execute directly**. When in doubt:
+> "This looks small enough to do directly — sound right, or do you want it tracked?"
 
 ---
 
-## Triviality gate — bow out when the work doesn't deserve orchestration
+## Project-level recipes win
 
-Not every request is an issue. The orchestration chain (story → plan →
-test-design → tdd-design → deep-review) is theatre when the work is
-trivially scoped. Skip the chain when **all** of the following hold:
-
-- The request is bounded to one file (or a small, obviously related set).
-- The change is reversible in a single commit (no migrations, no schema
-  changes, no public-API breaks).
-- No new behaviour is being added — typo fix, rename, comment update,
-  obvious mechanical refactor with tests already green.
-- The user did not explicitly ask for an issue.
-
-In that case, **execute directly**. Do not create an issue file. Do not
-invoke `user-story-builder`, `user-story-planner`, or `test-design`. The
-existing repo's git history and (if a session ends up worth recording)
-`session-close` are sufficient memory.
-
-When in doubt, **ask one short question**:
-> "This looks small enough to do directly without an issue — sound right,
-> or do you want it tracked?"
-
-If the user says "track it", proceed with the full Phase 1 planning flow.
-If they say "just do it", execute and skip the orchestration. Don't
-default to creating issues for trivial work.
-
----
-
-## Project-level recipes win over plugin skills
-
-Before dispatching to any plugin skill, scan the current project's
-`CLAUDE.md` (root of the repo, or `.claude/CLAUDE.md`):
+Before dispatching to any plugin skill, scan the current project's `CLAUDE.md`:
 
 ```bash
 fd -t f -d 2 'CLAUDE\.md' . 2>/dev/null | head -3
 ```
 
-The plugin's skills are general-purpose. The project's `CLAUDE.md`
-documents tools the plugin can't see — internal CLIs, deploy commands,
-test runners, company-property MCP servers, custom fixtures. **When a
-project recipe describes how to do the task at hand, follow it instead
-of the plugin's general protocol.** The project knows its own runtime;
-the plugin doesn't.
-
-Concrete priority order:
-
-1. Direct project recipe in `CLAUDE.md` — use as written.
-2. Plugin skill that fits — invoke as the chain table directs.
-3. Generic engineering judgement — when neither fits.
-
-This rule applies at session start, before knowledge retrieval.
+Priority:
+1. Direct project recipe in `CLAUDE.md` — use as written
+2. Plugin skill that fits — invoke as the chain table directs
+3. Generic engineering judgement
 
 ---
 
 ## Issue format
 
-See [references/issue-template.md](references/issue-template.md) for the canonical template with field reference.
+See [references/issue-template.md](references/issue-template.md) for the canonical template.
 
 ---
 
@@ -172,10 +129,10 @@ facts are not moved — they outlive the issue.
 **On task completion:** mark the task `[x]`, append the short commit hash inline, and
 update `updated:` in frontmatter.
 
-**On issue completion:** when all tasks are `[x]`, signal:
+**On issue completion:** when all tasks are `[x]`:
 > "All tasks complete. Ready for review."
 
-The agent never sets status to `done` unilaterally. That is the human's action after review.
+The agent never archives or marks issues done unilaterally. That is the human's action.
 
 ---
 
@@ -184,7 +141,7 @@ The agent never sets status to `done` unilaterally. That is the human's action a
 Run at the start of every session, silently, before any other action:
 
 ```bash
-qmd query "<issue title> <issue objective>" --min-score 0.5 -n 8
+qmd query "<issue title> <issue objective>" --min-score 0.5 -n 8 2>/dev/null || true
 ```
 
 Load returned facts and spike excerpts into working context.
@@ -194,16 +151,7 @@ If something surfaces that the human hasn't mentioned:
 > "Before we start — [[FACT-012-auth-token-refresh]] covers token refresh behavior here.
 > Worth keeping in mind."
 
-If a loaded fact contradicts something in the issue's Context: surface it immediately
-before any execution begins.
-
-Then run a second query targeting terms for the relevant domain:
-
-```bash
-qmd query "<domain> <key concepts from objective>" --min-score 0.5 -n 5
-```
-
-Filter results to `~/engineering/terms/`. Surface relevant terms the same way as facts.
+If a loaded fact contradicts something in the issue's Context: surface it immediately.
 
 ---
 
@@ -213,19 +161,25 @@ Entry points: Jira ticket, Sentry issue, verbal description, scratch idea.
 
 1. Create the issue file at `~/engineering/issues/<nnn>-<slug>.md`.
 2. Fill `## Objective` — one sentence, defines done.
-3. Fill `## Scope` — in and off-limits. Both fields required before the issue goes active.
+3. Fill `## Scope` — in and off-limits. Both fields required before tasks are written.
 4. Fill `## Context` with background, links, and constraints.
 5. Run knowledge retrieval. Surface relevant facts.
 6. Fill `## Open questions` with anything unresolved.
 
 **If open questions exist before tasks are written:**
-→ invoke `dead-reckoning`. Add the resulting spike link under `### Spikes`. Promote
-  confirmed facts and add links under `### Facts`. Clear resolved questions.
+→ invoke `dead-reckoning`. Add the resulting spike link under `### Spikes`. Clear resolved questions.
 
 **If objective is clear enough to proceed:**
 → invoke `user-story-builder` if scope needs shaping.
 → invoke `user-story-planner` to break into tasks.
-→ write tasks into `## Tasks`. Set status to `active`.
+
+**When generating tasks for implementation work,** the first task is always:
+```
+- [ ] Spec + implement: behavioral contract → TDD (tdd-design)
+```
+This ensures tdd-design runs before any production code is written.
+
+→ Write tasks into `## Tasks`. The issue is now active (present in issues/, not archived).
 
 **Issue stays lean.** Objective + scope + context + questions + tasks + pointers.
 Narrative belongs in spikes. Facts belong in the knowledge library.
@@ -236,48 +190,15 @@ Narrative belongs in spikes. Facts belong in the knowledge library.
 
 ### Session start protocol
 
-User informs the issue to work on. If not provided, ask before proceeding —
-do not guess.
+User informs the issue to work on. If not provided, list issues and ask.
 
-1. **Retrieve the last session for this issue.**
-
-   Extract the issue ID from the issue file frontmatter and search the sessions branch:
+1. **Run knowledge retrieval.**
 
    ```bash
-   ISSUE_ID=$(rg '^id:' "$ISSUE_FILE" | head -1 | sed 's/id: *//;s/"//g' | tr -d '[:space:]')
-
-   SESSIONS_BRANCH=$(git config user.name \
-     | tr '[:upper:]' '[:lower:]' \
-     | tr -cs 'a-z0-9' '-' \
-     | sed 's/-*$//;s/$/\/sessions/')
-
-   LAST_SESSION=$(git show "${SESSIONS_BRANCH}" 2>/dev/null \
-     | git ls-tree "${SESSIONS_BRANCH}" 2>/dev/null \
-     | rg "\t${ISSUE_ID}-" \
-     | awk '{print $NF}' \
-     | sort | tail -1)
-
-   if [ -n "$LAST_SESSION" ]; then
-     git show "${SESSIONS_BRANCH}:${LAST_SESSION}/SESSION.md" 2>/dev/null
-   fi
-   ```
-
-   If a SESSION.md is found, surface it immediately:
-
-   > "Last session on this issue: [outcome]. Key decisions: [...].
-   > Pending tasks from that session: [any [ ] tasks listed]."
-
-   If the sessions branch does not exist or no session matches the issue ID,
-   proceed silently — this is expected for issues that have not been worked on yet.
-
-2. **Run knowledge retrieval.**
-
-   ```bash
-   qmd query "<issue title> <issue objective>" --min-score 0.5 -n 8
+   qmd query "<issue title> <issue objective>" --min-score 0.5 -n 8 2>/dev/null || true
    ```
 
    Load returned facts and spike excerpts into working context.
-   If nothing scores above threshold, proceed without — do not ask the human.
 
    If something surfaces that the human hasn't mentioned:
    > "Before we start — [[FACT-012-auth-token-refresh]] covers token refresh behavior
@@ -286,23 +207,14 @@ do not guess.
    If a loaded fact contradicts something in the issue's Context: surface it
    immediately before any execution begins.
 
-   Then run a second query targeting terms for the relevant domain:
+2. **Read the issue** — objective, scope, context, open questions, tasks.
 
-   ```bash
-   qmd query "<domain> <key concepts from objective>" --min-score 0.5 -n 5
-   ```
-
-   Filter results to `~/engineering/terms/`. Surface relevant terms the same way
-   as facts.
-
-3. **Read the issue** — objective, scope, context, open questions, tasks.
-
-4. **If `## Open questions` has unresolved items:**
+3. **If `## Open questions` has unresolved items:**
    > "There are open questions on this issue. Recommend resolving them before
    > execution. Want to run dead-reckoning, or proceed and treat them as known risks?"
    Wait for the human's decision.
 
-5. **State what you understand and what you're about to do.** Wait for confirmation
+4. **State what you understand and what you're about to do.** Wait for confirmation
    if anything is ambiguous.
 
 ### During execution
@@ -311,49 +223,35 @@ do not guess.
 
 1. Mark `[x]` in `## Tasks` and append the short commit hash: `- [x] Task description abc1234`
 
-2. Assemble the summarization input from what is already in working context:
-   issue objective, completed task title, and prose of any facts loaded this session
-   that were relevant to this task. Pipe to Haiku to produce a self-contained Context field:
-```bash
-   CONTEXT_SUMMARY=$(printf "Issue objective: <objective>\nTask: <task title>\nContext used:\n<prose of relevant loaded facts — omit if none>" \
-     | claude -p \
-       "Summarize in 2-3 sentences what was known and what informed this task. Self-contained — no file paths, no wiki links, no FACT-NNN references. Plain prose only." \
-       --model claude-haiku-4-5-20251001 \
-       --max-turns 1)
-```
-
-3. Attach a git note to that commit:
-```bash
+2. Attach a git note to the commit:
+   ```bash
    git notes add -m "Task: <task title>
    Why: <one sentence from issue Objective>
-   Context: $CONTEXT_SUMMARY
    Files: <files changed>" $(git log -1 --format="%H")
-```
-   Omit the `Context:` field entirely if no facts or session context informed this task.
+   ```
 
-4. Update `updated:` in the issue frontmatter.
+3. Update `updated:` in the issue frontmatter.
 
 **When a discovery warrants permanent storage:**
 → invoke `knowledge` skill. Add the wiki link under `### Facts` in the issue.
 
 **When work surfaces something outside issue scope:**
-→ create a new issue in `inbox`. Do not expand scope silently.
-→ if it blocks current work, add it to `## Open questions` and surface it to the human.
+→ create a new issue in `~/engineering/issues/`. Do not expand scope silently.
+→ if it blocks current work, add it to `## Open questions` and surface it.
 
 **When all tasks are `[x]`:**
 > "All tasks complete. Ready for review — invoking `deep-review` next."
 
-Then invoke the `deep-review` skill on the branch diff. Phase 1 (scope and
-safety) gates whether Phase 2 runs.
+Then invoke the `deep-review` skill on the branch diff.
 
 ### Context recovery
 
 When resuming after any interruption:
 
-1. User informs the issue.
+1. User informs the issue (or list issues to pick one).
 2. Run knowledge retrieval.
 3. Read the issue — tasks tell you exactly where execution stopped.
-4. State the reconstruction: "We were doing X. The remaining tasks are Y and Z."
+4. State the reconstruction: "We were doing X. Remaining tasks: Y and Z."
 5. Wait for confirmation before proceeding.
 
 ---
@@ -363,19 +261,17 @@ When resuming after any interruption:
 When all tasks are complete, invoke `deep-review` skill.
 
 After review passes:
-1. Human sets status to `done`.
-2. Move issue file to `~/engineering/issues/archive/`.
-3. Spikes and facts are not moved — they outlive the issue.
+1. Human archives the issue: move file to `~/engineering/issues/archive/`.
+2. Spikes and facts are not moved — they outlive the issue.
 
 ---
 
 ## Rules
 
 - Never read `archive/`. Stale context.
-- `## Scope` with explicit off-limits is required before an issue goes `active`.
+- `## Scope` with explicit off-limits is required before tasks are written.
 - `## Open questions` must be reviewed at session start. Non-empty = risk. Name it.
 - The agent marks tasks `[x]` as they complete — never in bulk at session end.
-- The agent never rewrites `## Objective`, `## Scope`, or `## Context`. Those belong to the human.
-- Scope violations are not silent. New work goes to a new issue in `inbox`.
+- The agent never archives issues. That is the human's action.
+- Scope violations are not silent. New work goes to a new issue.
 - Facts and spikes are pointers only. Never copy content into the issue.
-- The agent never sets status to `done`. That is the human's action.
