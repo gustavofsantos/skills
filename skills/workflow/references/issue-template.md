@@ -4,7 +4,6 @@
 ---
 id: "{id}"
 title: "{title}"
-status: inbox
 branch:
 tags: []
 created: {today}
@@ -23,8 +22,7 @@ One sentence. What "done" looks like when this issue closes.
 ## Context
 
 Relevant background. Links to Jira, Sentry, docs, prior decisions.
-If design constraints apply, paste the relevant `design-constraints` block
-(mode: `evolutionary` or `refactor`) here as a named section — not as prose.
+If design constraints apply, paste the relevant `design-constraints` block here.
 
 ## Open questions
 
@@ -33,39 +31,32 @@ If design constraints apply, paste the relevant `design-constraints` block
 ## Behavioral contract
 
 <!--
-Optional. Filled by `test-design` when the issue describes new behaviour.
-Omit the section entirely until cases exist — same convention as ### Facts.
-
-Format:
+Filled by `tdd-design` Phase 1 when the issue describes new behaviour.
+Omit entirely until cases exist.
 
 **Unit:** `<identifier>` — <one-sentence responsibility>
 **Test location:** `<file path>` > `<describe block>`
 
 - C1. Given <context>, When <action>, Then <outcome>
-- C2. Given <context>, When <action>, Then <outcome>
-
-For multi-unit issues, use one subsection per unit:
-
-### Unit: cart
-- C1. ...
 - C2. ...
-
-### Unit: pricing
-- C3. ...
 -->
 
 ## Tasks
 
-- [ ] Task 1
 <!--
-For TDD work, tasks reference cases by ID rather than restating them:
+For TDD work, the first task is always the spec + implementation task:
+
+- [ ] Spec + implement: behavioral contract → TDD (tdd-design)
+
+Subsequent tasks (if the issue has multiple units or phases):
 
 - [ ] C1, C2 — implement empty-cart error and happy path
 - [ ] C3 — handle currency boundary
-- [ ] C4–C6 — collaborator failure modes
 
 For non-TDD work (refactor, infra, docs), tasks remain imperative.
 -->
+
+- [ ] Task 1
 
 ---
 
@@ -76,24 +67,20 @@ For non-TDD work (refactor, infra, docs), tasks remain imperative.
 - [[NNN-slug]]
 ```
 
-**Valid statuses:** `inbox` `not-now` `active` `done`
-
 **`branch`** — optional. When present, used to locate worktree context.
 **`### Facts`** — wiki links to facts in `~/engineering/facts/` relevant to this issue.
 **`### Spikes`** — wiki links to spike narratives in `~/engineering/spikes/`.
 
-## Refinement progression
+An issue is **active** when it exists in `~/engineering/issues/` (not `archive/`).
+Archive when all tasks are complete.
 
-An issue progresses through stages of refinement, each adding precision:
+## Refinement progression
 
 | Stage | Sections populated |
 |---|---|
-| `inbox` | Objective, maybe Context |
-| `shaped` | + Scope, + Open questions |
-| `contracted` | + Behavioral contract (TDD work only) |
-| `planned` | + Tasks (referencing cases for TDD work) |
-| `executing` | tasks getting `[x]`, commit hashes appended |
-| `done` | all tasks `[x]`, archived |
-
-The same file holds every stage. Reading the file at any point shows
-exactly how refined the issue is.
+| Created | Objective, maybe Context |
+| Shaped | + Scope, + Open questions |
+| Contracted | + Behavioral contract (TDD work only) |
+| Planned | + Tasks |
+| Executing | Tasks getting `[x]`, commit hashes appended |
+| Done | All tasks `[x]`, archived |

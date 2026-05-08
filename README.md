@@ -58,7 +58,6 @@ npx skills remove -g        # uninstall
 | Skill | Description |
 |---|---|
 | [workflow](skills/workflow/SKILL.md) | Protocol for managing daily engineering work — the orchestrator that coordinates all other skills across planning, execution, and review phases. |
-| [session-close](skills/session-close/SKILL.md) | Closes the current working session: synthesizes a SESSION.md via Haiku, writes it to the personal sessions branch, and links all session commits back via git notes. |
 
 ### Thinking & Design
 
@@ -73,9 +72,7 @@ npx skills remove -g        # uninstall
 
 | Skill | Description |
 |---|---|
-| [test-design](skills/test-design/SKILL.md) | Collaborative specification protocol that writes the behavioural contract directly into the active issue's `## Behavioral contract` section. Feeds tdd-design. |
-| [tdd-design](skills/tdd-design/SKILL.md) | Drives implementation using Test-Driven Development as a design tool, enforcing the red-green-refactor cycle and using test friction as a design signal. Reads cases from the issue's contract section. |
-| [shameless-green](skills/shameless-green/SKILL.md) | Redirects to the simplest, most obvious code that makes a failing test pass during the GREEN phase of TDD — make it work first, make it clean after. |
+| [tdd-design](skills/tdd-design/SKILL.md) | Full TDD workflow: collaborative behavioral-contract conversation followed immediately by the red-green-refactor cycle. |
 
 ### Review & Validation
 
@@ -89,13 +86,8 @@ npx skills remove -g        # uninstall
 | Skill | Description |
 |---|---|
 | [knowledge](skills/knowledge/SKILL.md) | Manages the long-term knowledge library — atomic facts, spike narratives, and business domain terms stored in ~/engineering/. |
-| [dead-reckoning](skills/dead-reckoning/SKILL.md) | Structured analysis partner for tracing behavior, investigating bugs, and answering architectural questions in complex or legacy codebases. |
-| [survey](skills/survey/SKILL.md) | Surveys an unfamiliar repository to build atomic facts correlated with the existing knowledge base, plus a spike document capturing what was covered and what remains open. |
-| [provenance](skills/provenance/SKILL.md) | Retrieves the full intent context behind a commit — issue objective, task, linked facts, semantic git note, and session document — given a commit hash. |
-
-`qmd` ships as a non-user-invocable reference (the search primitive used by the
-skills above). It is loaded by `knowledge`, `dead-reckoning`, `survey`, and
-`workflow` — not exposed as a separate command surface.
+| [dead-reckoning](skills/dead-reckoning/SKILL.md) | Structured code investigation that dispatches a read-only subagent to trace behavior and answer architectural questions, returning behavioral claims and high-signal files to load. |
+| [survey](skills/survey/SKILL.md) | Surveys an unfamiliar repository by dispatching a read-only subagent across Identity, Config, and Integration zones, returning findings and fact candidates. |
 
 ### Planning & Tracking
 
@@ -122,7 +114,8 @@ report enters the main session.
 | Subagent | Triggered by skill | Why |
 |---|---|---|
 | `deep-review` | [deep-review](skills/deep-review/SKILL.md) | Loads ~400 lines of analytical references + the full diff. Runs on `opus`. Concurrent reviews possible. |
-| `provenance` | [provenance](skills/provenance/SKILL.md) | Pulls fact files, git notes, and SESSION.md content into a single read — keeps them out of main context. |
+| `dead-reckoning` | [dead-reckoning](skills/dead-reckoning/SKILL.md) | Reads code and knowledge base across many files without filling the main session context. Returns claims + high-signal files. |
+| `survey` | [survey](skills/survey/SKILL.md) | Discovers an unfamiliar repo across three zones without filling the main session context. Two surveys can run concurrently on orthogonal focus areas. |
 
 Subagents need the `Agent` tool — Claude Code is the canonical runtime for
 the dispatch shims. Hosts without `Agent` will see a SKILL.md that reads
@@ -136,8 +129,8 @@ make skill recall proactive instead of purely reactive:
 
 | Hook | Script | What it does |
 |---|---|---|
-| `SessionStart` | `hooks/session-start.sh` | Surfaces the active issue, inbox count, and last session for that issue at session begin. Stays silent on fresh machines (no `~/engineering/`). |
-| `UserPromptSubmit` | `hooks/inject-context.py` | Pattern-matches the user's input for Jira ticket IDs, commit-hash investigations, workflow entry points, code-review intent, codebase-orientation requests, and session-close intent. Injects skill suggestions as `additionalContext` when matched. Never blocks. |
+| `SessionStart` | `hooks/session-start.sh` | Surfaces all current issues (files in `~/engineering/issues/` not in `archive/`) with task counts at session begin. Stays silent on fresh machines (no `~/engineering/`). |
+| `UserPromptSubmit` | `hooks/inject-context.py` | Pattern-matches the user's input for Jira ticket IDs, workflow entry points, code-review intent, and codebase-orientation requests. Injects skill suggestions as `additionalContext` when matched. Never blocks. |
 
 Hooks run in **Claude Code only**. Cursor and Claude Desktop installations
 ignore them — the skill bodies still carry the same trigger phrases as a
