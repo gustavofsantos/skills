@@ -2,6 +2,14 @@
 description: >
   Closes the current working session: synthesizes a SESSION.md via Haiku, writes it
   to the personal sessions branch, and links all session commits back via git notes.
+when_to_use: >
+  Use when the user is wrapping up a working session. Triggers on
+  "close session", "end session", "wrap up", "finalize session",
+  "session-close", "fechar sessão", "encerrar sessão", "finalizar
+  sessão", or whenever a chunk of work has been committed and the
+  human is signing off. Run this before the next session starts —
+  the SESSION.md it produces is what the next session's `workflow`
+  recall reads to reconstruct context.
 allowed-tools: Bash(git:*) Bash(python3:*) Bash(claude:*) Bash(rg:*) Bash(fd:*) Read
 ---
 

@@ -14,7 +14,7 @@ allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(qmd:*)
 
 # Playbook Builder
 
-Creates executable test playbooks stored in `~/.knowledge/playbooks/`.
+Creates executable test playbooks stored in `~/engineering/playbooks/`.
 A playbook is a procedural document that specifies how to validate a feature —
 setup, steps, and acceptance criteria — executable by an agent, a human, or both.
 
@@ -26,7 +26,7 @@ during validation sessions.
 ## Storage layout
 
 ```
-~/.knowledge/
+~/engineering/
   playbooks/
     PB-001-auth-token-refresh.md
     PB-002-db-test-setup.md          ← reusable child
@@ -37,7 +37,7 @@ ID format: `PB-NNN` (zero-padded, sequential). Separate from `FACT-NNN`.
 
 Next ID:
 ```bash
-fd '^PB-\d+.*\.md$' ~/.knowledge/playbooks -d 1 2>/dev/null \
+fd '^PB-\d+.*\.md$' ~/engineering/playbooks -d 1 2>/dev/null \
   | sed 's|.*/PB-||;s|-.*||' | sort -n | tail -1
 ```
 
@@ -97,7 +97,9 @@ Choose based on what already exists:
 
 ### Protocol B — From contract
 
-1. Read the `test-design` contract artifact.
+1. Read the active issue file. Locate its `## Behavioral contract` section
+   (the contract lives there since the contract→issue merge — there is no
+   separate `~/.knowledge/contracts/` file anymore).
 2. Map to playbook sections:
 
    | Contract element | Playbook section |
