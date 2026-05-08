@@ -7,41 +7,55 @@ when_to_use: >
   behavior, or fix a bug with a reproducible case. Triggers on "implement X", "add behavior Y",
   "write the function that...", "make this work", or when the user jumps straight to
   implementation code. Also trigger if the user writes code without a failing test first.
-  When a behavioral contract from test-design is present, consume it — do not re-derive.
+  When the active issue has a `## Behavioral contract` section, consume it — do not re-derive.
 allowed-tools: Read Edit Bash(rg:*) Bash(fd:*)
 ---
 
 # TDD as Design Tool
 
-## Contract for active issue
+## Active issue and contract
 
-!`cat ~/.knowledge/contracts/$(rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1 | xargs -I{} basename {} .md | cut -d- -f1).md 2>/dev/null || echo '(no contract — run test-design first)'`
+```bash
+ISSUE_FILE=$(rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1)
+```
+
+If `ISSUE_FILE` is empty, ask the user which issue this implementation belongs
+to before proceeding.
+
+Read the issue. The `## Behavioral contract` section (when present) is the
+source of truth for what to test. If the section is absent, propose running
+`test-design` first; otherwise apply the sequencing rules in the RED section
+below for ad-hoc work.
 
 ## Core idea
 
 Write the test first. Not as a formality — as a **design act**.
 
-If a test is hard to write, the design is wrong. Test friction is not an inconvenience;
-it is information. Use it.
+If a test is hard to write, the design is wrong. Test friction is not an
+inconvenience; it is information. Use it.
 
 ---
 
 ## Starting from a behavioral contract
 
-If a contract from test-design is present, it is the source of truth for what to test.
-Do not re-derive cases, do not add cases, do not skip cases.
+If the issue has a `## Behavioral contract` section, it is the source of truth
+for what to test. Do not re-derive cases, do not add cases, do not skip cases.
 
-At the start of each RED phase, take the next unimplemented case from the contract:
+At the start of each RED phase, take the next unimplemented case from the
+contract:
 
     Given <context>
     When  <action>
     Then  <outcome>
 
-Translate it directly into a failing test. The Given maps to setup. The When maps to
-the action under test. The Then maps to the assertion. Do not interpret beyond what
-the case says.
+Translate it directly into a failing test. The Given maps to setup. The When
+maps to the action under test. The Then maps to the assertion. Do not interpret
+beyond what the case says.
 
-When a case is implemented and green, move to the next one in contract order.
+When a case is implemented and green, mark its task `[x]` in the issue's
+`## Tasks` section (tasks reference cases by ID — `C1, C2`). If no
+corresponding task exists yet because the contract preceded planning, append
+a task line referencing the just-implemented case.
 
 If no contract is present, apply the sequencing rules in the RED section below.
 
@@ -57,8 +71,8 @@ Each step has a strict contract:
 
 ### RED: Write a failing test
 
-**With a behavioral contract:** take the next case. Encode it. Confirm it fails for
-the right reason before proceeding.
+**With a behavioral contract:** take the next case. Encode it. Confirm it fails
+for the right reason before proceeding.
 
 **Without a behavioral contract:** decide what to test next by asking:
 *What is the simplest behavior I need to add next?*
@@ -93,15 +107,15 @@ Every test falls into one of three categories. Apply the right assertion type:
 | Outgoing command (has side effects) | Sent by subject | That it was sent (mock/spy) |
 | Outgoing query (no side effects) | Sent by subject | Nothing — don't test it |
 
-**Incoming messages:** assert the return value. This is the only place that value
-should be tested.
+**Incoming messages:** assert the return value. This is the only place that
+value should be tested.
 
 **Outgoing commands** (writes to DB, triggers events, calls observers): use a
 mock/spy to verify the message was sent with the right arguments. Do not assert
 on the internal state of the collaborator.
 
-**Outgoing queries:** the receiver already tests those. Testing them from the sender
-duplicates assertions and creates coupling.
+**Outgoing queries:** the receiver already tests those. Testing them from the
+sender duplicates assertions and creates coupling.
 
 **Never test private methods.** A bug in a private method will always surface
 through a failing public interface test. Testing privates couples tests to
@@ -111,11 +125,11 @@ implementation and misleads readers.
 
 ## Point of view: sight along the edges
 
-Tests behave as external consumers of the object under test — they know only what
-messages come in and go out. They do not reach inside.
+Tests behave as external consumers of the object under test — they know only
+what messages come in and go out. They do not reach inside.
 
-If you need to inspect internal state to verify behavior, that is a missing public
-interface or a missing abstraction.
+If you need to inspect internal state to verify behavior, that is a missing
+public interface or a missing abstraction.
 
 ---
 
@@ -137,17 +151,17 @@ When you hit friction, **stop and redesign** before continuing.
 
 ## Test doubles: use with discipline
 
-When you create a double for a role, also verify that every real implementer of that
-role responds to the same interface. A double that stubs a method that no longer
-exists will silently pass while the application is broken.
+When you create a double for a role, also verify that every real implementer
+of that role responds to the same interface. A double that stubs a method that
+no longer exists will silently pass while the application is broken.
 
 ---
 
 ## DRY is wrong in tests
 
-Tests are concretions, not abstractions. Do not add conditionals or loops to test
-code to reduce duplication. If you mirror production logic in tests, the tests become
-coupled to implementation and break on every refactor.
+Tests are concretions, not abstractions. Do not add conditionals or loops to
+test code to reduce duplication. If you mirror production logic in tests, the
+tests become coupled to implementation and break on every refactor.
 
 Write it down twice. Duplication in tests is cheaper than the wrong abstraction.
 
@@ -163,8 +177,8 @@ Write it down twice. Duplication in tests is cheaper than the wrong abstraction.
 
 ## Sequencing behaviors (no contract)
 
-When no behavioral contract exists, list behaviors before starting and go in this
-order:
+When no behavioral contract exists in the issue, list behaviors before starting
+and go in this order:
 
 1. Degenerate case (empty input, zero, null, single item)
 2. Main happy path

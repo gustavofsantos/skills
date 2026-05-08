@@ -29,21 +29,30 @@ Uses the `npx skills` package to install globally. The package discovers skills 
 ## Repository layout
 
 ```
-skills/          ← one subdirectory per skill
+skills/             ← one subdirectory per skill
   <name>/
-    SKILL.md     ← skill definition (frontmatter + instructions)
-    scripts/     ← optional Python scripts invoked by the skill
-    references/  ← optional reference documents the skill reads
-    examples/    ← optional worked examples
-agents/          ← custom agents (currently empty placeholder)
-commands/        ← custom slash commands (currently empty placeholder)
+    SKILL.md        ← skill definition (frontmatter + instructions)
+    scripts/        ← optional Python scripts invoked by the skill
+    references/     ← optional reference documents the skill reads
+    examples/       ← optional worked examples
+agents/             ← custom subagents (one .md file per subagent)
+  deep-review.md    ← read-only code review subagent (high effort, opus model)
+  provenance.md     ← commit → intent traversal subagent
+commands/           ← custom slash commands (currently empty placeholder)
+hooks/              ← plugin-level Claude Code hooks (proactive recall)
+  hooks.json        ← hook config (SessionStart + UserPromptSubmit)
+  session-start.sh  ← surfaces active issue / inbox / last session at start
+  inject-context.py ← regex pattern detector that injects skill suggestions
 .claude-plugin/
-  plugin.json    ← plugin name, version, author metadata
+  plugin.json       ← plugin name, version, author metadata
+  marketplace.json  ← marketplace listing
 .scripts/
-  install.sh     ← installs all skills to ~/.claude/skills et al.
-  setup-hooks.sh ← copies hooks from .scripts/hooks/ into .git/hooks/
+  install.sh        ← installs all skills to ~/.claude/skills et al.
+  setup-hooks.sh    ← copies dev hooks from .scripts/hooks/ into .git/hooks/
   hooks/
-    pre-commit   ← auto-bumps plugin patch version on every commit
+    pre-commit      ← auto-bumps plugin patch version on every commit
+bin/
+  write-session-branch  ← git-plumbing writer for the personal sessions branch
 ```
 
 ## Skill format
@@ -76,8 +85,10 @@ Instructions for the AI...
 - **`${CLAUDE_SKILL_DIR}`** resolves the skill's installation directory across all three distribution methods (plugin, personal symlinks, Cursor copies). Use it instead of `$CLAUDE_PLUGIN_ROOT/skills/<name>`.
 - **Search conventions:** use `fd` and `rg` for file listing and content search throughout skill bodies. They're faster on large trees and consistent across the user's machines. Anchor `rg` patterns to line boundaries when matching YAML frontmatter fields (e.g. `rg -l '^status: active$'`).
 - **References** are markdown files the skill explicitly `Read`s at runtime — they are not auto-loaded. The skill SKILL.md must name which references to load and when.
-- Skills are designed to be invoked from Claude Code (bash tool available) or Claude Desktop (no bash tool). Skills that use bash must detect the environment and fall back gracefully for Desktop.
+- Skills target **Claude Code** as the canonical runtime (bash tool, fd, rg, qmd, Agent dispatch). Cursor / Claude Desktop installs work to the extent the host supports the same primitives. Earlier "Desktop fallback" branches that asked the AI to detect environment and produce manual-save markdown were retired — the cognitive cost of every skill body branching on runtime outweighed the marginal utility.
 - The `workflow` skill is the orchestrator — it coordinates all other skills. New issues, session starts, and context recovery all route through it first.
+- The plugin ships **hooks** in `hooks/` that fire on SessionStart (engineering vault state) and UserPromptSubmit (skill-trigger pattern detection). They are configured in `hooks/hooks.json` and run in Claude Code. The skill bodies' `when_to_use` triggers continue to work when hooks aren't running (e.g., Cursor) — recall is just less proactive.
+- **Subagent dispatch pattern.** Read-only, batch-style skills (`deep-review`, `provenance`) are slim dispatch shims — they call the Agent tool with the matching `subagent_type`, surface the subagent's report, and act on its chain pointer. The full protocol lives in `agents/<name>.md` as the subagent's system prompt; this keeps the heavy reference loading and intermediate file reads out of the main session context. When adding a new read-only skill, prefer this pattern: SKILL.md = trigger + dispatch, `agents/<name>.md` = canonical protocol.
 
 ## Engineering workspace (not in this repo)
 
@@ -90,8 +101,14 @@ Skills operate against `~/engineering/` — a separate directory that is the use
   facts/           ← atomic knowledge facts (see knowledge skill)
   spikes/          ← investigation narratives (see dead-reckoning skill)
   terms/<domain>/  ← business domain term definitions (see knowledge skill)
+  playbooks/       ← validation playbooks (see playbook-builder skill)
+  thinking/        ← thinking-partner progress.md and flush.md, by topic
   .counters/       ← sequential ID files: issues, facts, spikes, terms
 ```
+
+This is the **single root** for long-lived AI-assisted engineering state.
+There is no parallel `~/.knowledge/` or `~/.config/shared-memory/` tree —
+every artifact lives under one prefix so paths are predictable across skills.
 
 The `qmd` CLI indexes this directory for semantic search. After writing any fact, spike, or term: `qmd update && qmd embed`.
 

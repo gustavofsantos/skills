@@ -18,16 +18,8 @@ The knowledge library is the long-term memory of the system. It survives issue c
 session endings, and context window pressure. It is queried automatically at session start
 and written to whenever a validated fact is discovered.
 
----
-
-## Environment detection
-
-Before any operation, determine which environment you are running in:
-
-- **Claude Code**: bash tool is available — use CLI commands and direct file access.
-- **Claude Desktop**: no bash tool — see [references/desktop-mode.md](references/desktop-mode.md) for all fallback procedures.
-
-To check: attempt to use the bash tool. If unavailable, you are on Claude Desktop.
+This skill targets Claude Code (bash, fd, rg, qmd available). It is not designed
+for environments without those tools.
 
 ---
 
@@ -111,29 +103,19 @@ For the canonical term format (YAML frontmatter + section structure), read [refe
 
 ### Creating a term
 
-#### Claude Code
-
 1. `domain_dir = ~/engineering/terms/<domain>` — create with `mkdir -p` if absent.
 2. Read `~/engineering/.counters/terms` (treat as `0` if absent). Increment and write back.
 3. Slugify the term name (lowercase, hyphens, max 5 words).
-4. Write `$domain_dir/TERM-<NNN>-<slug>.md` using the format below — substitute fields.
+4. Write `$domain_dir/TERM-<NNN>-<slug>.md` using the format from [references/formats.md](references/formats.md) — substitute fields.
 5. Fill `## Definição` and `## Não é`, then index:
    ```bash
    qmd update && qmd embed
    ```
 6. Reference by wiki link: `[[TERM-NNN-slug]]`.
 
-#### Claude Desktop
-
-Generate the full term markdown using the format above, instruct the user to save it to
-`~/engineering/terms/<domain>/TERM-NNN-<slug>.md` with the correct sequential ID, then
-run `qmd update && qmd embed` in a terminal.
-
 ---
 
 ## Querying facts
-
-### Claude Code
 
 ```bash
 # Semantic search
@@ -149,16 +131,9 @@ qmd search "FACT-007" --full
 fd '^FACT-007.*\.md$' ~/engineering/facts -d 1
 ```
 
-### Claude Desktop (qmd MCP server)
-
-See [references/desktop-mode.md](references/desktop-mode.md) for the full procedure.
-Use the `qmd` MCP server tools for queries. Fact writes are not available via MCP.
-
 ---
 
 ## Creating a fact
-
-### Claude Code
 
 1. Check for duplicates:
    ```bash
@@ -185,15 +160,9 @@ Use the `qmd` MCP server tools for queries. Fact writes are not available via MC
 
 5. Add the wiki link to the originating issue's `### Facts` section.
 
-### Claude Desktop
-
-See [references/desktop-mode.md](references/desktop-mode.md).
-
 ---
 
 ## Updating a fact
-
-### Claude Code
 
 Locate the file:
 ```bash
@@ -204,10 +173,6 @@ Use Read to load it, then Edit to update frontmatter or body. After any write:
 qmd update && qmd embed
 ```
 
-### Claude Desktop
-
-See [references/desktop-mode.md](references/desktop-mode.md).
-
 ---
 
 ## Promoting a theorem from dead-reckoning
@@ -215,30 +180,22 @@ See [references/desktop-mode.md](references/desktop-mode.md).
 When `dead-reckoning` produces a confirmed theorem:
 
 1. The theorem has: a statement, an anchor (commit hash or file:line), and human confirmation.
-
-2. **Claude Code** — scaffold with `confidence: "validated"`, fill refs and confirmed date,
-   then `qmd update && qmd embed`. In the spike document, replace the full theorem text
-   with `→ [[FACT-NNN-slug]]`.
-
-3. **Claude Desktop** — see [references/desktop-mode.md](references/desktop-mode.md).
+2. Scaffold the fact with `confidence: "validated"`, fill `refs` and `confirmed` date,
+   then `qmd update && qmd embed`.
+3. In the spike document, replace the full theorem text with `→ [[FACT-NNN-slug]]`.
 
 ---
 
 ## Invalidating a fact
 
-### Claude Code
-
 ```bash
 FILE=$(fd '^FACT-007.*\.md$' ~/engineering/facts -d 1)
 ```
-Use Read to load the file, Edit to set `confidence: invalidated` in frontmatter and append an `## Invalidated` section, then:
+Use Read to load the file, Edit to set `confidence: invalidated` in frontmatter and
+append an `## Invalidated` section, then:
 ```bash
 qmd update && qmd embed
 ```
-
-### Claude Desktop
-
-See [references/desktop-mode.md](references/desktop-mode.md).
 
 Do not delete invalidated facts. The history of what was believed is useful.
 Identify any facts that `## Depends on` the invalidated one and review them.
@@ -247,21 +204,15 @@ Identify any facts that `## Depends on` the invalidated one and review them.
 
 ## Session start protocol (automatic)
 
-### Claude Code
-
 ```bash
 qmd query "<issue title> <issue objective>" -n 8
 ```
 
 Load results above score 0.5. Ignore the rest.
 
-### Claude Desktop
-
-See [references/desktop-mode.md](references/desktop-mode.md).
-
 ---
 
-## qmd collection setup (one-time, Claude Code only)
+## qmd collection setup (one-time)
 
 ```bash
 qmd collection add ~/engineering --name engineering
@@ -282,8 +233,6 @@ Run once when setting up a new machine.
   Always run `qmd update && qmd embed` after writing.
 - Confidence is a property of the evidence, not of how certain you feel.
   Asserted = human said so. Validated = code confirms it.
-- On Claude Desktop, never silently skip a write operation. Always surface the
-  markdown to the user and explain what they need to do.
 - Terms are scoped by business domain, not by codebase. A term in `financeiro/` applies
   to the financial domain regardless of which project implements it.
 - The `## No código` section in a term is only written when the business name and the
