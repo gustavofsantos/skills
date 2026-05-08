@@ -207,14 +207,25 @@ User informs the issue to work on. If not provided, list issues and ask.
    If a loaded fact contradicts something in the issue's Context: surface it
    immediately before any execution begins.
 
-2. **Read the issue** — objective, scope, context, open questions, tasks.
+2. **Stamp the session ID into the issue frontmatter.**
 
-3. **If `## Open questions` has unresolved items:**
+   The current session ID was injected at session start (look for **Session ID:** in
+   the session context). Use Edit to append it to the `sessions:` frontmatter field —
+   an inline YAML list, e.g. `sessions: ["abc123"]` or `sessions: ["abc123", "def456"]`.
+
+   This links the issue to the session so the UserPromptSubmit hook injects resume
+   context on every subsequent turn.
+
+   If the session ID is already in the `sessions:` list, skip this step.
+
+3. **Read the issue** — objective, scope, context, open questions, tasks.
+
+4. **If `## Open questions` has unresolved items:**
    > "There are open questions on this issue. Recommend resolving them before
    > execution. Want to run dead-reckoning, or proceed and treat them as known risks?"
    Wait for the human's decision.
 
-4. **State what you understand and what you're about to do.** Wait for confirmation
+5. **State what you understand and what you're about to do.** Wait for confirmation
    if anything is ambiguous.
 
 ### During execution
