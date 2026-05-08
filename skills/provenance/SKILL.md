@@ -5,9 +5,12 @@ description: >
 when_to_use: >
   Use when debugging a change and wanting to understand why it was made. Triggers on
   "por que isso foi mudado", "contexto desse commit", "provenance <hash>", "quem mudou
-  isso e por quê", "o que motivou essa mudança", or after a git blame when investigating
-  a specific commit hash. Do not use for code traversal without a hash — use
-  dead-reckoning for that.
+  isso e por quê", "o que motivou essa mudança", "git blame this", "who wrote this
+  line", "who introduced this", "quem introduziu", "quem adicionou", "what was the
+  reasoning", or after a git blame / git log when investigating a specific commit
+  hash. Also when a 7-40 char hex hash appears next to investigative language
+  (porquê, motivação, contexto, why, blame, motivation). Do not use for code
+  traversal without a hash — use dead-reckoning for that.
 argument-hint: [commit-hash]
 arguments: [commit_hash]
 allowed-tools: Bash(git:*) Bash(rg:*) Bash(fd:*) Bash(cat:*)

@@ -4,15 +4,55 @@ description: >
   skills across planning, execution, and review phases.
 when_to_use: >
   Use whenever the user mentions an issue, starts a task, wants to know what's in progress,
-  needs context recovery, or says things like "new issue", "start a session", "what are we
-  working on", "recall", "continue", "create an issue for X", or "let's work on X".
-  This skill is the entry point — it decides which other skills to invoke.
+  needs context recovery, or says things like "new issue", "nova issue", "start a session",
+  "começar a trabalhar", "vamos trabalhar em X", "let's work on X", "what are we working on",
+  "what should I do next", "o que estamos fazendo", "recall", "continue", "continuar",
+  "resume", "retomar", "create an issue for X", "criar uma issue para". This skill is the
+  ENTRY POINT — it decides which other skills to invoke and chains them together.
 argument-hint: [action] [issue-id]
 arguments: [action, issue_id]
 allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(cat:*) Bash(qmd:*) Bash(git:*)
 ---
 
 # Workflow
+
+> **Orchestrator skill.** Decides which other skills to invoke at each
+> phase of an issue. Always read the [Skill chain](#skill-chain) section
+> below before any execution — it is the routing map for the entire
+> plugin.
+
+## Skill chain
+
+The orchestrator routes work to specialist skills. This table is the
+single source of truth for which skill handles which moment:
+
+| Moment | Skill |
+|---|---|
+| Raw idea needs shaping | `user-story-builder` |
+| Issue needs tasks broken down | `user-story-planner` |
+| Objective is unclear or complex | `thinking-partner` |
+| Thinking session needs depth | `thinking-lenses` (offered by thinking-partner) |
+| Open questions remain before execution | `dead-reckoning` |
+| Unfamiliar codebase, no facts yet | `survey` (run before `dead-reckoning`) |
+| New abstraction or API surface to design | `interface-design` |
+| Module boundaries / coupling questions | `bounded-contexts` |
+| Implementation with new behavior | `test-design` → `tdd-design` |
+| GREEN phase, overthinking the implementation | `shameless-green` |
+| Refactor without behavior change | `incremental-refactor` constraints (in issue Context) |
+| New feature, unsure where to start | `evolutionary-design` constraints (in issue Context) |
+| Review before PR | `deep-review` |
+| Need to validate a feature in an environment | `playbook-builder` |
+| Discover a fact worth keeping | `knowledge` |
+| Investigate why a commit was made | `provenance` |
+| Jira ticket ID or URL appears | `jira-context` (run immediately, do not ask) |
+| Wrapping up the working session | `session-close` |
+
+The plugin also ships a SessionStart hook that surfaces the active
+issue, inbox, and last session at session begin — the model receives
+that context automatically and should consult it before asking the
+human "what are we working on".
+
+---
 
 ## Currently active issues
 
@@ -76,23 +116,6 @@ update `updated:` in frontmatter.
 > "All tasks complete. Ready for review."
 
 The agent never sets status to `done` unilaterally. That is the human's action after review.
-
----
-
-## Skill integration
-
-| Moment | Skill |
-|---|---|
-| Raw idea needs shaping | `user-story-builder` |
-| Issue needs tasks broken down | `user-story-planner` |
-| Objective is unclear or complex | `thinking-partner` |
-| Open questions remain before execution | `dead-reckoning` |
-| Implementation with new behavior | `test-design` → `tdd-design` |
-| Design choice feels coupled or tangled | `thinking-lenses` (Braided) |
-| Bug keeps recurring or fix feels like a patch | `thinking-lenses` (Iceberg) |
-| Review before PR | `deep-review` |
-| Code smell or duplication found | `incremental-refactor` constraints (in issue Context) |
-| New feature, unsure where to start | `evolutionary-design` constraints (in issue Context) |
 
 ---
 
@@ -258,7 +281,10 @@ do not guess.
 → if it blocks current work, add it to `## Open questions` and surface it to the human.
 
 **When all tasks are `[x]`:**
-> "All tasks complete. Ready for review."
+> "All tasks complete. Ready for review — invoking `deep-review` next."
+
+Then invoke the `deep-review` skill on the branch diff. Phase 1 (scope and
+safety) gates whether Phase 2 runs.
 
 ### Context recovery
 

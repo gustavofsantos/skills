@@ -1,9 +1,13 @@
 ---
 description: >
-  Semantic and keyword search over local markdown collections using the qmd CLI or MCP server.
+  Reference for the qmd CLI / MCP server — semantic and keyword search over the
+  engineering knowledge vault. Loaded by knowledge-related skills (knowledge,
+  dead-reckoning, survey, workflow); not a user-facing skill.
 when_to_use: >
-  Use when searching notes, finding documents, or looking up information in the knowledge
-  library using qmd.
+  Internal reference only. Do not invoke directly — the higher-level skills
+  (knowledge, dead-reckoning, survey, workflow) call qmd as their search
+  primitive and read this file for the exact query syntax.
+user-invocable: false
 license: MIT
 compatibility: Requires qmd CLI or MCP server. Install via `npm install -g @tobilu/qmd`.
 metadata:

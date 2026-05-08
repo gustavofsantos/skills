@@ -3,6 +3,12 @@ description: >
   Installs or updates provenance git hooks in the current project's .git/hooks/.
   Safe to re-run — merges into existing hook scripts using markers, never removes
   unrelated content.
+when_to_use: >
+  Use when entering a new project for the first time, when the user says
+  "set up this project", "instala os hooks", "configura este projeto",
+  "project-setup", "install provenance hooks", or after pulling the plugin
+  on a fresh clone. Also re-run after the plugin updates so newly added
+  hooks land in .git/hooks/.
 allowed-tools: Bash(git:*) Bash(chmod:*) Bash(python3:*)
 ---
 

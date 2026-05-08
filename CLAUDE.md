@@ -29,21 +29,28 @@ Uses the `npx skills` package to install globally. The package discovers skills 
 ## Repository layout
 
 ```
-skills/          ← one subdirectory per skill
+skills/             ← one subdirectory per skill
   <name>/
-    SKILL.md     ← skill definition (frontmatter + instructions)
-    scripts/     ← optional Python scripts invoked by the skill
-    references/  ← optional reference documents the skill reads
-    examples/    ← optional worked examples
-agents/          ← custom agents (currently empty placeholder)
-commands/        ← custom slash commands (currently empty placeholder)
+    SKILL.md        ← skill definition (frontmatter + instructions)
+    scripts/        ← optional Python scripts invoked by the skill
+    references/     ← optional reference documents the skill reads
+    examples/       ← optional worked examples
+agents/             ← custom agents (currently empty placeholder)
+commands/           ← custom slash commands (currently empty placeholder)
+hooks/              ← plugin-level Claude Code hooks (proactive recall)
+  hooks.json        ← hook config (SessionStart + UserPromptSubmit)
+  session-start.sh  ← surfaces active issue / inbox / last session at start
+  inject-context.py ← regex pattern detector that injects skill suggestions
 .claude-plugin/
-  plugin.json    ← plugin name, version, author metadata
+  plugin.json       ← plugin name, version, author metadata
+  marketplace.json  ← marketplace listing
 .scripts/
-  install.sh     ← installs all skills to ~/.claude/skills et al.
-  setup-hooks.sh ← copies hooks from .scripts/hooks/ into .git/hooks/
+  install.sh        ← installs all skills to ~/.claude/skills et al.
+  setup-hooks.sh    ← copies dev hooks from .scripts/hooks/ into .git/hooks/
   hooks/
-    pre-commit   ← auto-bumps plugin patch version on every commit
+    pre-commit      ← auto-bumps plugin patch version on every commit
+bin/
+  write-session-branch  ← git-plumbing writer for the personal sessions branch
 ```
 
 ## Skill format
@@ -78,6 +85,7 @@ Instructions for the AI...
 - **References** are markdown files the skill explicitly `Read`s at runtime — they are not auto-loaded. The skill SKILL.md must name which references to load and when.
 - Skills are designed to be invoked from Claude Code (bash tool available) or Claude Desktop (no bash tool). Skills that use bash must detect the environment and fall back gracefully for Desktop.
 - The `workflow` skill is the orchestrator — it coordinates all other skills. New issues, session starts, and context recovery all route through it first.
+- The plugin ships **hooks** in `hooks/` that fire on SessionStart (engineering vault state) and UserPromptSubmit (skill-trigger pattern detection). They are configured in `hooks/hooks.json` and only run in Claude Code. They make recall proactive — but the skill bodies still carry the canonical `when_to_use` triggers as a fallback for Cursor / Claude Desktop installations.
 
 ## Engineering workspace (not in this repo)
 
