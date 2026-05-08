@@ -187,6 +187,23 @@ Looks good: [specific things done well]
 
 ---
 
+## After review — chain back to workflow
+
+When the review concludes:
+
+- **Green / Yellow** → tell the human the issue is ready to ship and remind them
+  that the human (not the agent) sets `status: done`. If the workflow skill is
+  active for the issue, surface its archive step.
+- **Red** → name what blocks shipping in one sentence. If the blockers can be
+  addressed in scope, hand off to `incremental-refactor` for a constrained fix
+  pass; otherwise create a new inbox issue (via `workflow`) for follow-up work.
+
+If structural problems surface that match the catalog of `bounded-contexts` or
+`interface-design`, name the skill and flag it as a candidate for a separate
+issue — do not expand the current review.
+
+---
+
 ## Rules
 
 - Always state the core change before starting. Get confirmation.

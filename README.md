@@ -92,9 +92,12 @@ npx skills remove -g        # uninstall
 |---|---|
 | [knowledge](skills/knowledge/SKILL.md) | Manages the long-term knowledge library — atomic facts, spike narratives, and business domain terms stored in ~/engineering/. |
 | [dead-reckoning](skills/dead-reckoning/SKILL.md) | Structured analysis partner for tracing behavior, investigating bugs, and answering architectural questions in complex or legacy codebases. |
-| [qmd](skills/qmd/SKILL.md) | Semantic and keyword search over local markdown collections using the qmd CLI or MCP server. |
 | [survey](skills/survey/SKILL.md) | Surveys an unfamiliar repository to build atomic facts correlated with the existing knowledge base, plus a spike document capturing what was covered and what remains open. |
 | [provenance](skills/provenance/SKILL.md) | Retrieves the full intent context behind a commit — issue objective, task, linked facts, semantic git note, and session document — given a commit hash. |
+
+`qmd` ships as a non-user-invocable reference (the search primitive used by the
+skills above). It is loaded by `knowledge`, `dead-reckoning`, `survey`, and
+`workflow` — not exposed as a separate command surface.
 
 ### Planning & Tracking
 
@@ -109,6 +112,23 @@ npx skills remove -g        # uninstall
 |---|---|
 | [jira-context](skills/jira-context/SKILL.md) | Fetches Jira ticket context via acli — parent, children, and comments — the moment a ticket ID or URL appears in the conversation. |
 | [project-setup](skills/project-setup/SKILL.md) | Installs or updates provenance git hooks in the current project's .git/hooks/. |
+
+## Hooks
+
+The plugin ships two Claude Code hooks (configured in `hooks/hooks.json`) that
+make skill recall proactive instead of purely reactive:
+
+| Hook | Script | What it does |
+|---|---|---|
+| `SessionStart` | `hooks/session-start.sh` | Surfaces the active issue, inbox count, and last session for that issue at session begin. Stays silent on fresh machines (no `~/engineering/`). |
+| `UserPromptSubmit` | `hooks/inject-context.py` | Pattern-matches the user's input for Jira ticket IDs, commit-hash investigations, workflow entry points, code-review intent, codebase-orientation requests, and session-close intent. Injects skill suggestions as `additionalContext` when matched. Never blocks. |
+
+Hooks run in **Claude Code only**. Cursor and Claude Desktop installations
+ignore them — the skill bodies still carry the same trigger phrases as a
+fallback.
+
+To extend hook behaviour, add patterns to `detect()` in
+`hooks/inject-context.py` or new commands to `hooks/hooks.json`.
 
 ## Development setup
 

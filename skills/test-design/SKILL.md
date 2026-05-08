@@ -152,7 +152,11 @@ After producing the artifact:
    rg -l '^status: active$' ~/engineering/issues -g '*.md' 2>/dev/null | head -1 | xargs basename | cut -d- -f1
    ```
 2. Write the contract to `~/.knowledge/contracts/<issue-id>.md` so `tdd-design` can read it.
-3. Say: "Contract is ready. Start tdd-design with the first case."
+3. **Hand off to `tdd-design` immediately**: invoke the `tdd-design` skill in the
+   same turn and start the first RED case. Do not wait for the human to ask —
+   the contract is the trigger. Say:
+   > "Contract written to `~/.knowledge/contracts/<id>.md`. Starting `tdd-design`
+   > with the first case now."
 
 ---
 
