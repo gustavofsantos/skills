@@ -113,6 +113,22 @@ skills above). It is loaded by `knowledge`, `dead-reckoning`, `survey`, and
 | [jira-context](skills/jira-context/SKILL.md) | Fetches Jira ticket context via acli — parent, children, and comments — the moment a ticket ID or URL appears in the conversation. |
 | [project-setup](skills/project-setup/SKILL.md) | Installs or updates provenance git hooks in the current project's .git/hooks/. |
 
+## Subagents
+
+Read-only, batch-style skills are split into a thin trigger surface (the
+`SKILL.md`) and a heavy protocol that runs in an isolated context (the
+subagent in `agents/<name>.md`). The skill dispatches to the subagent via the
+`Agent` tool, the subagent does the work, and only its final structured
+report enters the main session.
+
+| Subagent | Triggered by skill | Why |
+|---|---|---|
+| `deep-review` | [deep-review](skills/deep-review/SKILL.md) | Loads ~400 lines of analytical references + the full diff. Runs on `opus`. Concurrent reviews possible. |
+| `provenance` | [provenance](skills/provenance/SKILL.md) | Pulls fact files, git notes, and SESSION.md content into a single read — keeps them out of main context. |
+
+Subagents need the `Agent` tool. On Cursor / Claude Desktop, the dispatch
+shim falls back to reading the agent file and executing the protocol inline.
+
 ## Hooks
 
 The plugin ships two Claude Code hooks (configured in `hooks/hooks.json`) that

@@ -55,8 +55,9 @@ def detect(text: str) -> List[str]:
     if hash_re.search(text) and intent_re.search(text):
         suggestions.append(
             "**Commit-intent investigation pattern detected.** "
-            "Use the `provenance` skill with the commit hash — it traces the "
-            "full chain (issue → task → facts → git note → SESSION.md)."
+            "Trigger the `provenance` skill — it dispatches to the `provenance` "
+            "subagent (read-only chain: issue → task → facts → git note → "
+            "SESSION.md). Pass the commit hash as the argument."
         )
 
     # ── Workflow entry points ────────────────────────────────────────────
@@ -95,8 +96,10 @@ def detect(text: str) -> List[str]:
     )
     if review_re.search(text) and review_target_re.search(text):
         suggestions.append(
-            "**Code review intent detected.** Use the `deep-review` skill "
-            "(Phase 1 scope/safety + Phase 2 depth on the core change)."
+            "**Code review intent detected.** Trigger the `deep-review` skill — "
+            "it dispatches to the `deep-review` subagent (Phase 1 scope/safety "
+            "+ Phase 2 depth on the core change). The subagent runs on Opus in "
+            "an isolated context."
         )
 
     # ── Survey / orient on unfamiliar codebase ───────────────────────────
