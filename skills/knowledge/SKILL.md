@@ -3,131 +3,46 @@ description: >
   Manages the long-term knowledge library — atomic facts, spike narratives, and business
   domain terms stored in ~/engineering/.
 when_to_use: >
-  Use when a validated discovery should be preserved beyond a single session, when promoting a
-  dead-reckoning theorem to a permanent fact, when querying for prior knowledge, or when
-  maintaining the qmd index. Triggers on "save this as a fact", "do we know anything about X",
-  "promote this theorem", "what do we know about Y", or when the workflow skill's session start
-  protocol runs knowledge retrieval.
+  Use when a validated discovery should be preserved beyond a single session, when promoting
+  a dead-reckoning finding to a permanent fact, or when querying for prior knowledge.
+  Triggers on "save this as a fact", "do we know anything about X", "promote this finding",
+  "what do we know about Y", "salva isso como fato", "o que sabemos sobre X".
 argument-hint: [topic]
 allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(qmd:*) Bash(cat:*)
 ---
 
 # Knowledge
 
-The knowledge library is the long-term memory of the system. It survives issue completion,
-session endings, and context window pressure. It is queried automatically at session start
-and written to whenever a validated fact is discovered.
-
-This skill targets Claude Code (bash, fd, rg, qmd available). It is not designed
-for environments without those tools.
-
----
+The knowledge library is the long-term memory of the system. Queried before execution,
+written whenever a validated fact is discovered.
 
 ## Storage layout
 
 ```
 ~/engineering/
-  facts/
-    FACT-001-auth-token-refresh-window.md
-    FACT-002-billing-cycle-immutability.md
-  spikes/
-    001-auth-investigation.md
-    002-payment-flow-traversal.md
+  facts/      FACT-001-auth-token-refresh-window.md
+  spikes/     001-auth-investigation.md
   terms/
-    financeiro/
-      TERM-001-ciclo-de-faturamento.md
-    fretboard/
-      TERM-002-nota-musical.md
-  .counters/
-    facts    ← sequential ID counter
-    spikes   ← sequential ID counter
-    terms    ← sequential ID counter
+    financeiro/   TERM-001-ciclo-de-faturamento.md
+  .counters/  facts  spikes  terms
 ```
 
-Facts are global — not scoped to a system or repo.
-Spikes are narratives produced by `dead-reckoning`. They reference facts but do not contain them.
-Terms are scoped by business domain, not by project or codebase.
+Facts are global — not scoped to a repo. Spikes are produced by `dead-reckoning`.
+Terms are scoped by business domain.
 
----
-
-## Fact format
-
-For the canonical fact format (YAML frontmatter + section structure), read [references/formats.md](references/formats.md).
+For canonical file formats (frontmatter + sections), read `references/formats.md`.
 
 **Confidence levels:**
-- `asserted` — stated by the human as external truth. Not yet verified in code.
-- `validated` — confirmed through traversal or testing. Anchored to evidence.
-
-Never invent a fact. Never assert confidence higher than the evidence supports.
+- `asserted` — stated as external truth, not yet verified in code
+- `validated` — confirmed through traversal or testing, anchored to evidence
 
 ---
 
-## Spike format
-
-Spikes live in `~/engineering/spikes/`. They are produced by `dead-reckoning`.
-Their format is defined in the `dead-reckoning` skill.
-
-A spike references facts by wiki link. It never contains the fact content.
-
-```markdown
-This confirms that auth token refresh happens before expiry validation.
--> [[FACT-007-auth-token-refresh-window]]
-
-The billing cycle is immutable once created — updates are not possible,
-only replacements.
--> [[FACT-012-billing-cycle-immutability]], [[FACT-013-billing-replacement-flow]]
-```
-
----
-
-## Terms
-
-Terms are normative definitions of business domain concepts. They answer the question
-"what does this concept mean in this domain?" rather than "what does the code do?"
-
-**Facts vs. terms:**
-- A **fact** is empirical — a behavioral claim anchored to evidence in code (file:line, commit hash, test name). It describes what the system does.
-- A **term** is normative — it defines what a concept means in the business domain. It does not require a code anchor.
-
-**When to create a term:**
-- A domain concept appears recurrently across sessions and issues
-- There is risk of confusion between the business name and the code name
-- A concept needs an authoritative definition that can be referenced, not re-explained
-
-**Terms can exist without references.** Not every business concept has a fact yet.
-A term without a `## Referências` entry is valid — it defines the concept for future use.
-
-### Term format
-
-For the canonical term format (YAML frontmatter + section structure), read [references/formats.md](references/formats.md).
-
-### Creating a term
-
-1. `domain_dir = ~/engineering/terms/<domain>` — create with `mkdir -p` if absent.
-2. Read `~/engineering/.counters/terms` (treat as `0` if absent). Increment and write back.
-3. Slugify the term name (lowercase, hyphens, max 5 words).
-4. Write `$domain_dir/TERM-<NNN>-<slug>.md` using the format from [references/formats.md](references/formats.md) — substitute fields.
-5. Fill `## Definição` and `## Não é`, then index:
-   ```bash
-   qmd update && qmd embed
-   ```
-6. Reference by wiki link: `[[TERM-NNN-slug]]`.
-
----
-
-## Querying facts
+## Querying
 
 ```bash
-# Semantic search
 qmd query "auth token expiry behavior" -n 5
-
-# Keyword + semantic combined
-qmd query $'lex: auth token\nvec: token refresh before expiry check' -n 5
-
-# Exact keyword / ID lookup
 qmd search "FACT-007" --full
-
-# Read a specific fact by ID
 fd '^FACT-007.*\.md$' ~/engineering/facts -d 1
 ```
 
@@ -135,80 +50,71 @@ fd '^FACT-007.*\.md$' ~/engineering/facts -d 1
 
 ## Creating a fact
 
-1. Check for duplicates:
+1. Check for duplicates first:
    ```bash
-   qmd query "<proposed fact statement>" -n 5
+   qmd query "<proposed statement>" -n 5
    ```
    If a related fact exists, extend it rather than creating a duplicate.
 
-2. Allocate an ID and scaffold the file:
+2. Allocate ID and write the file:
    ```bash
    NEXT=$(cat ~/engineering/.counters/facts 2>/dev/null || echo 0)
    NEXT=$((NEXT + 1))
    echo $NEXT > ~/engineering/.counters/facts
    ID="FACT-$(printf '%03d' $NEXT)"
-   SLUG="<short-slug>"
-   FILE=~/engineering/facts/${ID}-${SLUG}.md
+   FILE=~/engineering/facts/${ID}-<slug>.md
    ```
+   Write `$FILE` using the format in `references/formats.md`.
 
-3. Write `$FILE` using the Write tool with the canonical format from [references/formats.md](references/formats.md) — substitute `{id}`, `{title}`, `{today}`. Fill body sections.
-
-4. Index:
+3. Index:
    ```bash
    qmd update && qmd embed
    ```
 
-5. Add the wiki link to the originating issue's `### Facts` section.
+4. Add the wiki link to the originating issue's `### Facts` section.
 
 ---
 
 ## Updating a fact
 
-Locate the file:
 ```bash
 FILE=$(fd '^FACT-007.*\.md$' ~/engineering/facts -d 1)
 ```
-Use Read to load it, then Edit to update frontmatter or body. After any write:
-```bash
-qmd update && qmd embed
-```
+Read, Edit, then `qmd update && qmd embed`.
 
 ---
 
-## Promoting a theorem from dead-reckoning
+## Promoting a finding from dead-reckoning
 
-When `dead-reckoning` produces a confirmed theorem:
-
-1. The theorem has: a statement, an anchor (commit hash or file:line), and human confirmation.
-2. Scaffold the fact with `confidence: "validated"`, fill `refs` and `confirmed` date,
-   then `qmd update && qmd embed`.
-3. In the spike document, replace the full theorem text with `→ [[FACT-NNN-slug]]`.
+1. The finding has: a statement, an anchor (file:line or commit hash), human confirmation.
+2. Create the fact with `confidence: validated`. Fill `refs` and `confirmed` date.
+3. In the spike, replace the full finding text with `→ [[FACT-NNN-slug]]`.
+4. `qmd update && qmd embed`.
 
 ---
 
 ## Invalidating a fact
 
-```bash
-FILE=$(fd '^FACT-007.*\.md$' ~/engineering/facts -d 1)
-```
-Use Read to load the file, Edit to set `confidence: invalidated` in frontmatter and
-append an `## Invalidated` section, then:
-```bash
-qmd update && qmd embed
-```
-
-Do not delete invalidated facts. The history of what was believed is useful.
-Identify any facts that `## Depends on` the invalidated one and review them.
+Read the file, set `confidence: invalidated`, append an `## Invalidated` section, then
+`qmd update && qmd embed`. Do not delete — the history of what was believed is useful.
+Review any facts that `## Depends on` the invalidated one.
 
 ---
 
-## Session start protocol (automatic)
+## Creating a term
 
 ```bash
-qmd query "<issue title> <issue objective>" -n 8
+mkdir -p ~/engineering/terms/<domain>
+NEXT=$(cat ~/engineering/.counters/terms 2>/dev/null || echo 0)
+NEXT=$((NEXT + 1))
+echo $NEXT > ~/engineering/.counters/terms
+FILE=~/engineering/terms/<domain>/TERM-$(printf '%03d' $NEXT)-<slug>.md
 ```
+Write using the term format in `references/formats.md`. Then `qmd update && qmd embed`.
 
-Load results above score 0.5. Ignore the rest.
+**Facts vs. terms:** a fact is empirical — behavioral claim anchored to code.
+A term is normative — what a concept means in the business domain.
+The `## No código` section is only written when the code name diverges from the business name.
 
 ---
 
@@ -216,24 +122,16 @@ Load results above score 0.5. Ignore the rest.
 
 ```bash
 qmd collection add ~/engineering --name engineering
-qmd context add qmd://engineering "Engineering memory — issues, sessions, facts, and spike narratives"
+qmd context add qmd://engineering "Engineering memory — issues, sessions, facts, spikes"
 qmd embed
 ```
-
-Run once when setting up a new machine.
 
 ---
 
 ## Rules
 
-- One fact per atomic claim. If a fact needs two paragraphs, it contains two claims — split it.
-- Facts are global. Never scope them to a system when the claim is universal.
+- One fact per atomic claim. Two paragraphs = two facts — split it.
+- Facts are global. Never scope a universal claim to a single system.
 - Never copy fact content into an issue or spike. Reference by wiki link only.
-- A fact exists to be found. If it cannot be found by query, it does not exist.
-  Always run `qmd update && qmd embed` after writing.
-- Confidence is a property of the evidence, not of how certain you feel.
-  Asserted = human said so. Validated = code confirms it.
-- Terms are scoped by business domain, not by codebase. A term in `financeiro/` applies
-  to the financial domain regardless of which project implements it.
-- The `## No código` section in a term is only written when the business name and the
-  code name diverge. When they match, omit the section entirely — do not write it empty.
+- Always `qmd update && qmd embed` after writing. A fact that can't be found doesn't exist.
+- Confidence reflects the evidence, not how certain you feel.
