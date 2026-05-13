@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# bin/dream-run
+#
+# Headless dream job. Wire into cron or launchd:
+#
+#   crontab:
+#     0 2 */3 * * /path/to/skills/bin/dream-run
+#
+#   launchd (~/Library/LaunchAgents/com.gustavofsantos.dream.plist):
+#     StartCalendarInterval: run every 3 days at 02:00
+#
+# Logs to ~/engineering/.dream-run.log (last 500 lines kept).
+
+set -euo pipefail
+
+LOG="$HOME/engineering/.dream-run.log"
+CURSOR="$HOME/engineering/.dream-cursor"
+SESSIONS_DIR="$HOME/engineering/sessions"
+
+# Rotate log — keep last 500 lines
+if [ -f "$LOG" ]; then
+  tail -500 "$LOG" > "${LOG}.tmp" && mv "${LOG}.tmp" "$LOG"
+fi
+
+log() {
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" | tee -a "$LOG"
+}
+
+# Guard: nothing to process
+if [ -f "$CURSOR" ]; then
+  LAST_RUN=$(python3 -c "import json; d=json.load(open('$CURSOR')); print(d.get('last_run',''))" 2>/dev/null || echo "")
+  if [ -n "$LAST_RUN" ]; then
+    COMPLETE_COUNT=$(fd -t f -e md . "$SESSIONS_DIR" -d 1 2>/dev/null \
+      | xargs grep -l 'complete: true' 2>/dev/null \
+      | wc -l | tr -d ' ')
+    PROCESSED_COUNT=$(python3 -c "
+import json
+d = json.load(open('$CURSOR'))
+print(len(d.get('processed', [])))
+" 2>/dev/null || echo "0")
+    NEW=$((COMPLETE_COUNT - PROCESSED_COUNT))
+    if [ "$NEW" -le 0 ]; then
+      log "No new sessions since last run. Skipping."
+      exit 0
+    fi
+    log "Found $NEW new session(s) to process."
+  fi
+fi
+
+log "Starting dream run."
+
+# Invoke Claude Code headless.
+# Adjust the skill namespace if using the marketplace install
+# (e.g., /gustavofsantos:dream instead of /dream).
+claude --print \
+  --dangerously-skip-permissions \
+  "Run the dream skill. Analyze all unprocessed session logs. Write directly to the vault and commit." \
+  2>> "$LOG" \
+  | tee -a "$LOG"
+
+EXIT=$?
+if [ $EXIT -eq 0 ]; then
+  log "Dream run complete."
+else
+  log "Dream run exited with code $EXIT."
+fi
+
+exit $EXIT
