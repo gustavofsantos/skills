@@ -23,20 +23,33 @@ Dream cursor: `~/engineering/.dream-cursor`
 
 ## Stage 1 — Orient
 
-Load the dream cursor to find unprocessed sessions:
+Load the dream cursor:
 
 ```bash
 cat ~/engineering/.dream-cursor 2>/dev/null || echo '{"last_run": null, "processed": []}'
 ```
 
-List all complete session files not yet processed:
+Parse `last_run` and `processed` from the output. Build the **work list** using shell-level
+filters so no session file is read before it is known to need processing.
+
+**If `last_run` is null** (first run ever) — find all finalized sessions:
 
 ```bash
-fd -t f -e md . ~/engineering/sessions -d 1 2>/dev/null | sort
+rg -l '^complete: true' ~/engineering/sessions --glob '*.md' 2>/dev/null | sort
 ```
 
-Filter to files newer than `last_run` (use file mtime) and not in `processed`.
-If `last_run` is null, process all complete sessions (frontmatter `complete: true`).
+**If `last_run` is set** — find only sessions finalized after that timestamp:
+
+```bash
+find ~/engineering/sessions -maxdepth 1 -name '*.md' -newermt "<last_run>" \
+  | xargs -r grep -l '^complete: true' 2>/dev/null | sort
+```
+
+Cross-check: remove any file whose basename appears in `processed` (guards against
+boundary races when two runs happen in rapid succession).
+
+**If the work list is empty, skip directly to Report and exit cleanly.** Do not read
+any session files.
 
 Load current vault state — issues and recent facts:
 
@@ -56,7 +69,10 @@ fd -t f -e md . ~/engineering/facts -d 1 2>/dev/null \
 
 ## Stage 2 — Mine
 
-Read each unprocessed session log in full. They are small — read all of them.
+Read each session in the work list. If the list has more than 8 files, or any single
+file exceeds ~150 lines, skim tool-call entries and focus on user/agent exchange blocks
+— do not read every line verbatim. Signal lives in the conversational turns, not in
+repeated file-path or bash-command entries.
 
 For each session, extract the following signal types. Use judgment, not
 keyword matching — the session log has enough structure to identify these
