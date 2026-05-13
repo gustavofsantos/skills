@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# bin/replay-sessions
+#
+# Runs parse_session.py against all existing Claude Code session JSONL files.
+# Safe to re-run — already-complete sessions are skipped via cursor state.
+#
+# Usage:
+#   bin/replay-sessions                  # all sessions
+#   bin/replay-sessions --limit 50       # newest 50 only
+#   bin/replay-sessions --dry-run        # list what would be processed
+#
+# After this runs, invoke the dream skill to consolidate into the vault.
+
+set -euo pipefail
+
+PARSE_SCRIPT="$(cd "$(dirname "$0")/.." && pwd)/hooks/parse_session.py"
+CLAUDE_DIR="$HOME/.claude"
+SESSIONS_DIR="$HOME/engineering/sessions"
+LIMIT=0
+DRY_RUN=false
+
+# --- args ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --limit)   LIMIT="${2:-0}"; shift 2 ;;
+    --dry-run) DRY_RUN=true; shift ;;
+    *) echo "Unknown argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+if [ ! -f "$PARSE_SCRIPT" ]; then
+  echo "Error: parse_session.py not found at $PARSE_SCRIPT" >&2
+  exit 1
+fi
+
+mkdir -p "$SESSIONS_DIR"
+
+# --- find all JSONL files, newest first ---
+if command -v fd &>/dev/null; then
+  mapfile -t JSONL_FILES < <(fd -t f -e jsonl . "$CLAUDE_DIR" 2>/dev/null \
+    | xargs ls -t 2>/dev/null)
+else
+  mapfile -t JSONL_FILES < <(find "$CLAUDE_DIR" -type f -name "*.jsonl" 2>/dev/null \
+    | xargs ls -t 2>/dev/null)
+fi
+
+if [ ${#JSONL_FILES[@]} -eq 0 ]; then
+  echo "No JSONL session files found in $CLAUDE_DIR"
+  exit 0
+fi
+
+echo "Found ${#JSONL_FILES[@]} session file(s) in $CLAUDE_DIR"
+[ "$LIMIT" -gt 0 ] && echo "Limit: $LIMIT"
+[ "$DRY_RUN" = true ] && echo "Dry run — no files will be written"
+echo ""
+
+PROCESSED=0
+SKIPPED=0
+ERRORS=0
+
+for jsonl_path in "${JSONL_FILES[@]}"; do
+  [ -z "$jsonl_path" ] && continue
+  [ "$LIMIT" -gt 0 ] && [ "$PROCESSED" -ge "$LIMIT" ] && break
+
+  session_id=$(basename "$jsonl_path" .jsonl)
+
+  # Skip already-complete sessions
+  state_file="$SESSIONS_DIR/.state-${session_id}.json"
+  if [ -f "$state_file" ]; then
+    complete=$(python3 -c \
+      "import json; d=json.load(open('$state_file')); print(d.get('complete', False))" \
+      2>/dev/null || echo "False")
+    if [ "$complete" = "True" ]; then
+      SKIPPED=$((SKIPPED + 1))
+      continue
+    fi
+  fi
+
+  # Infer project directory from JSONL path structure:
+  # ~/.claude/projects/<hash>/conversations/<session>.jsonl
+  #                   ^^^^^^^^
+  project_dir=$(python3 -c "
+from pathlib import Path
+p = Path('$jsonl_path')
+parts = p.parts
+if '.claude' in parts and 'projects' in parts:
+    idx = list(parts).index('projects')
+    print(str(Path(*parts[:idx+2])))
+else:
+    import os; print(os.getcwd())
+" 2>/dev/null || echo "$HOME")
+
+  if [ "$DRY_RUN" = true ]; then
+    echo "  would process: $session_id  (project: $project_dir)"
+    PROCESSED=$((PROCESSED + 1))
+    continue
+  fi
+
+  printf "  [%d] %s ... " "$((PROCESSED + 1))" "$session_id"
+
+  payload=$(python3 -c "
+import json
+print(json.dumps({
+  'session_id': '$session_id',
+  'cwd': '$project_dir',
+  'hook_event_name': 'Stop'
+}))
+")
+
+  if echo "$payload" | python3 "$PARSE_SCRIPT" --finalize 2>/dev/null; then
+    echo "ok"
+    PROCESSED=$((PROCESSED + 1))
+  else
+    echo "error"
+    ERRORS=$((ERRORS + 1))
+  fi
+done
+
+echo ""
+echo "Done."
+echo "  Processed : $PROCESSED"
+echo "  Skipped   : $SKIPPED (already complete)"
+[ "$ERRORS" -gt 0 ] && echo "  Errors    : $ERRORS (check $SESSIONS_DIR/.parse-debug.log)"
+echo ""
+echo "Next: run the dream skill to consolidate into ~/engineering/"
