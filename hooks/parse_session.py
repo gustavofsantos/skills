@@ -2,19 +2,31 @@
 """
 parse_session.py — Session log builder
 
-Called by PostToolUse and Stop hooks via hooks.json.
-Reads new JSONL entries since last cursor position, runs a MapReduce
-pipeline to pair tool_use/tool_result entries, and appends structured
-log entries to ~/engineering/sessions/<date>-<session-id>.md.
+Supports two agent runtimes, selected via --agent:
 
-Usage (hooks.json):
-  PostToolUse: python3 .../parse_session.py
-  Stop:        python3 .../parse_session.py --finalize
+  --agent claude  (default)
+    Called by Claude Code PostToolUse and Stop hooks via hooks.json.
+    Reads new JSONL entries since last cursor position, runs a MapReduce
+    pipeline to pair tool_use/tool_result entries, and appends structured
+    log entries to ~/engineering/sessions/<date>-<session-id>.md.
 
-NOTE: The JSONL format is inferred from Anthropic's Messages API shape
-as used by Claude Code. Validate against a real session file at
-~/.claude/projects/<hash>/conversations/ before deploying.
-Run with --dump-raw <session-id> to inspect without writing anything.
+  --agent cursor
+    Called by Cursor afterFileEdit, beforeShellExecution, beforeMCPExecution,
+    and stop hooks.  Each hook invocation carries a single event as JSON on
+    stdin; there is no JSONL transcript to seek through.
+
+Usage (Claude Code hooks.json):
+  PostToolUse: python3 .../parse_session.py --agent claude
+  Stop:        python3 .../parse_session.py --agent claude --finalize
+
+Usage (Cursor hooks.json):
+  afterFileEdit:        python3 .../parse_session.py --agent cursor
+  beforeShellExecution: python3 .../parse_session.py --agent cursor
+  stop:                 python3 .../parse_session.py --agent cursor --finalize
+
+Cursor hooks that require a permission response (beforeShellExecution,
+beforeMCPExecution, beforeReadFile, beforeSubmitPrompt) always receive
+{"permission": "allow"} on stdout so the agent is never blocked.
 """
 
 import json
@@ -30,6 +42,14 @@ ENGINEERING_DIR = Path.home() / "engineering"
 SESSIONS_DIR    = ENGINEERING_DIR / "sessions"
 DEBUG_LOG       = SESSIONS_DIR / ".parse-debug.log"
 
+# Cursor hook types that require a permission response on stdout.
+CURSOR_PERMISSION_HOOKS = {
+    "beforeShellExecution",
+    "beforeMCPExecution",
+    "beforeReadFile",
+    "beforeSubmitPrompt",
+}
+
 
 # ---------------------------------------------------------------------------
 # Entrypoint
@@ -37,10 +57,12 @@ DEBUG_LOG       = SESSIONS_DIR / ".parse-debug.log"
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--finalize",  action="store_true",
-                        help="Mark session complete (called by Stop hook)")
+    parser.add_argument("--finalize", action="store_true",
+                        help="Mark session complete (called by Stop/stop hook)")
     parser.add_argument("--dump-raw", metavar="SESSION_ID",
-                        help="Print raw JSONL entries for a session and exit")
+                        help="Print raw JSONL entries for a session and exit (claude only)")
+    parser.add_argument("--agent", choices=["claude", "cursor"], default="claude",
+                        help="Agent runtime whose hook payload format to expect")
     args = parser.parse_args()
 
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
@@ -50,6 +72,19 @@ def main():
         return
 
     payload = load_hook_payload()
+
+    if args.agent == "cursor":
+        main_cursor(args, payload)
+    else:
+        main_claude(args, payload)
+
+
+# ---------------------------------------------------------------------------
+# Claude Code adapter
+# ---------------------------------------------------------------------------
+
+def main_claude(args, payload):
+    """Read the JSONL transcript and append new entries to the session log."""
     session_id = payload.get("session_id", "")
     if not session_id:
         sys.exit(0)
@@ -60,8 +95,8 @@ def main():
         debug(f"JSONL not found for session {session_id}")
         sys.exit(0)
 
-    state   = load_state(session_id)
-    cursor  = state.get("cursor", 0)
+    state  = load_state(session_id)
+    cursor = state.get("cursor", 0)
 
     raw = read_from_cursor(jsonl_path, cursor)
     if not raw:
@@ -83,7 +118,86 @@ def main():
 
 
 # ---------------------------------------------------------------------------
-# JSONL location
+# Cursor adapter
+# ---------------------------------------------------------------------------
+
+def main_cursor(args, payload):
+    """Handle a single Cursor hook event from stdin."""
+    event           = payload.get("hook_event_name", "")
+    workspace_roots = payload.get("workspace_roots", [])
+    project         = workspace_roots[0] if workspace_roots else os.getcwd()
+    # Cursor sends conversation_id in IDE mode; generation_id in CLI mode.
+    conversation_id = payload.get("conversation_id") or payload.get("generation_id", "")
+    ts              = datetime.now(timezone.utc).isoformat()
+
+    if not conversation_id:
+        debug(f"Cursor hook fired with no conversation_id: event={event}")
+        _cursor_respond(event)
+        sys.exit(0)
+
+    state  = load_state(conversation_id)
+    record = _cursor_map_event(event, payload, ts)
+
+    if record:
+        session_file = get_or_create_session_file(conversation_id, state, project)
+        append_log(session_file, [record])
+
+    if args.finalize or event == "stop":
+        finalize(conversation_id, state)
+    else:
+        save_state(conversation_id, state)
+
+    _cursor_respond(event)
+
+
+def _cursor_map_event(event: str, payload: dict, ts: str) -> dict | None:
+    """Convert a Cursor hook payload to an internal session log record."""
+    if event == "afterFileEdit":
+        return {
+            "kind":      "tool",
+            "tool":      "Edit",
+            "input":     payload.get("file_path", ""),
+            "exit_code": 0,
+            "idx":       0,
+            "timestamp": ts,
+        }
+
+    if event == "beforeShellExecution":
+        # Pre-execution: exit code is not yet known.
+        return {
+            "kind":      "tool",
+            "tool":      "Bash",
+            "input":     payload.get("command", ""),
+            "exit_code": "?",
+            "idx":       0,
+            "timestamp": ts,
+        }
+
+    if event == "beforeMCPExecution":
+        tool_name = payload.get("tool_name", "Unknown")
+        arguments = payload.get("arguments", {})
+        inp = json.dumps(arguments)[:120] if not isinstance(arguments, str) else arguments[:120]
+        return {
+            "kind":      "tool",
+            "tool":      f"MCP:{tool_name}",
+            "input":     inp,
+            "exit_code": "?",
+            "idx":       0,
+            "timestamp": ts,
+        }
+
+    # stop and other notification-only events produce no log record.
+    return None
+
+
+def _cursor_respond(event: str) -> None:
+    """Print the required JSON response for permission-gating hooks."""
+    if event in CURSOR_PERMISSION_HOOKS:
+        print(json.dumps({"permission": "allow"}))
+
+
+# ---------------------------------------------------------------------------
+# JSONL location (Claude Code only)
 # ---------------------------------------------------------------------------
 
 def find_jsonl(session_id: str) -> Path | None:
@@ -144,7 +258,7 @@ def finalize(session_id: str, state: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# JSONL reading
+# JSONL reading (Claude Code only)
 # ---------------------------------------------------------------------------
 
 def read_from_cursor(jsonl_path: Path, cursor: int) -> list[tuple[int, dict]]:
@@ -164,7 +278,7 @@ def read_from_cursor(jsonl_path: Path, cursor: int) -> list[tuple[int, dict]]:
 
 
 # ---------------------------------------------------------------------------
-# MAP phase
+# MAP phase (Claude Code only)
 # ---------------------------------------------------------------------------
 
 def map_entries(raw: list[tuple[int, dict]]) -> list[dict]:
@@ -277,7 +391,6 @@ def _extract_exit_code(content, is_error: bool) -> int | str:
         return 1
     # Claude Code includes exit code in the tool_result content.
     # Common formats: "Exit code: 0" or trailing "\nexit_code=0".
-    # Adjust pattern if your JSONL uses a different convention.
     if isinstance(content, str):
         for line in reversed(content.splitlines()):
             l = line.strip().lower()
@@ -295,7 +408,7 @@ def _extract_exit_code(content, is_error: bool) -> int | str:
 
 
 # ---------------------------------------------------------------------------
-# REDUCE phase
+# REDUCE phase (Claude Code only)
 # ---------------------------------------------------------------------------
 
 def reduce_records(mapped: list[dict]) -> list[dict]:
