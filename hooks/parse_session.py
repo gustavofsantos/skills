@@ -143,6 +143,19 @@ def main_cursor(args, payload):
         append_log(session_file, [record])
 
     if args.finalize or event == "stop":
+        transcript_path = payload.get("transcript_path")
+        if transcript_path:
+            t_path = Path(transcript_path)
+            if t_path.exists():
+                cursor_pos = state.get("cursor", 0)
+                raw = read_from_cursor(t_path, cursor_pos)
+                if raw:
+                    mapped  = map_entries(raw)
+                    reduced = reduce_records(mapped)
+                    if reduced:
+                        session_file = get_or_create_session_file(conversation_id, state, project)
+                        append_log(session_file, reduced)
+                    state["cursor"] = raw[-1][0] + 1
         finalize(conversation_id, state)
     else:
         save_state(conversation_id, state)
@@ -308,7 +321,7 @@ def map_entries(raw: list[tuple[int, dict]]) -> list[dict]:
     for idx, entry in raw:
         ts  = entry.get("timestamp", "")
         msg = entry.get("message", entry)  # some formats inline the message fields
-        role    = msg.get("role", "")
+        role    = entry.get("role") or msg.get("role", "")
         content = msg.get("content", "")
 
         if role == "user":
@@ -349,7 +362,7 @@ def _tool_call_record(block: dict, idx: int, ts: str) -> dict:
     inp   = block.get("input", {})
     return {
         "kind":        "tool_call",
-        "tool_use_id": block.get("id", ""),
+        "tool_use_id": block.get("id") or f"no_id_{idx}",
         "tool":        name,
         "input":       _format_tool_input(name, inp),
         "idx":         idx,
