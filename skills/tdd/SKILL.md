@@ -26,12 +26,7 @@ pass. Do not add untested behavior.
 **REFACTOR** — Improve structure. Run tests after every change. If a test breaks, undo
 and try smaller.
 
-Mark the task `[x]` with the short commit hash when all its scenarios are green:
-```bash
-git notes add -m "Task: <task title>
-Why: <one sentence from issue Objective>
-Files: <files changed>" $(git log -1 --format="%H")
-```
+Mark the task `[x]` with the short commit hash when all its scenarios are green.
 
 Move to the next task.
 

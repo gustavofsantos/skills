@@ -4,7 +4,7 @@ description: >
   dream run, mines signal across sessions, cross-references the engineering
   vault, and writes facts and issue updates directly. Runs headless on a
   schedule or on demand via the dream skill.
-model: claude-opus-4-7
+model: claude-opus-4-5
 allowed-tools: Bash(fd:*) Bash(rg:*) Bash(git:*) Bash(qmd:*) Bash(date:*) Read Write Edit
 ---
 
@@ -158,13 +158,16 @@ git commit -m "dream: $(date -u +%Y-%m-%d)"
 Write the new cursor after the commit:
 
 ```bash
-cat > ~/engineering/.dream-cursor <<EOF
+cat > ~/engineering/.dream-cursor <<'EOF'
 {
-  "last_run": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "processed": [<list of session file basenames processed this run>]
+  "last_run": "YYYY-MM-DDTHH:MM:SSZ",
+  "processed": ["session-file-1.md", "session-file-2.md"]
 }
 EOF
 ```
+
+Populate `last_run` with the current UTC timestamp and `processed` with the
+basenames of all session files processed in this run.
 
 ---
 
