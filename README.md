@@ -85,6 +85,7 @@ npx skills remove -g        # uninstall
 
 | Skill | Description |
 |---|---|
+| [dream](skills/dream/SKILL.md) | Consolidates session logs into the engineering vault — extracts corrections, decisions, and fact candidates and writes them directly as facts and issue updates. |
 | [knowledge](skills/knowledge/SKILL.md) | Manages the long-term knowledge library — atomic facts, spike narratives, and business domain terms stored in ~/engineering/. |
 | [dead-reckoning](skills/dead-reckoning/SKILL.md) | Structured code investigation that dispatches a read-only subagent to trace behavior and answer architectural questions, returning behavioral claims and high-signal files to load. |
 | [survey](skills/survey/SKILL.md) | Surveys an unfamiliar repository by dispatching a read-only subagent across Identity, Config, and Integration zones, returning findings and fact candidates. |
@@ -101,7 +102,6 @@ npx skills remove -g        # uninstall
 | Skill | Description |
 |---|---|
 | [jira-context](skills/jira-context/SKILL.md) | Fetches Jira ticket context via acli — parent, children, and comments — the moment a ticket ID or URL appears in the conversation. |
-| [project-setup](skills/project-setup/SKILL.md) | Installs or updates provenance git hooks in the current project's .git/hooks/. |
 
 ## Subagents
 
@@ -124,20 +124,16 @@ file directly to run the protocol inline.
 
 ## Hooks
 
-The plugin ships two Claude Code hooks (configured in `hooks/hooks.json`) that
-make skill recall proactive instead of purely reactive:
+The plugin ships one hook script (`hooks/parse_session.py`) configured in `hooks/hooks.json`:
 
 | Hook | Script | What it does |
 |---|---|---|
-| `SessionStart` | `hooks/session-start.sh` | Surfaces all current issues (files in `~/engineering/issues/` not in `archive/`) with task counts at session begin. Stays silent on fresh machines (no `~/engineering/`). |
-| `UserPromptSubmit` | `hooks/inject-context.py` | Pattern-matches the user's input for Jira ticket IDs, workflow entry points, code-review intent, and codebase-orientation requests. Injects skill suggestions as `additionalContext` when matched. Never blocks. |
+| `PostToolUse` | `hooks/parse_session.py` | Reads new JSONL entries since last cursor, runs MapReduce to pair tool events, appends structured log to `~/engineering/sessions/`. |
+| `Stop`        | `hooks/parse_session.py --finalize` | Final flush of session log; marks session complete in frontmatter. |
 
 Hooks run in **Claude Code only**. Cursor and Claude Desktop installations
 ignore them — the skill bodies still carry the same trigger phrases as a
 fallback.
-
-To extend hook behaviour, add patterns to `detect()` in
-`hooks/inject-context.py` or new commands to `hooks/hooks.json`.
 
 ## Development setup
 

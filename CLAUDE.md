@@ -39,11 +39,11 @@ agents/             ← custom subagents (one .md file per subagent)
   deep-review.md    ← read-only code review subagent (high effort, opus model)
   dead-reckoning.md ← read-only code investigation subagent
   survey.md         ← read-only repository discovery subagent
+  dream.md          ← memory consolidation subagent (writes facts and issue updates)
 commands/           ← custom slash commands (currently empty placeholder)
-hooks/              ← plugin-level Claude Code hooks (proactive recall)
-  hooks.json        ← hook config (SessionStart + UserPromptSubmit)
-  session-start.sh  ← surfaces current issues and inbox count at session start
-  inject-context.py ← regex pattern detector that injects skill suggestions
+hooks/              ← plugin-level Claude Code hooks (session capture)
+  hooks.json        ← hook config (PostToolUse + Stop)
+  parse_session.py  ← reads JSONL transcript entries and appends to session log
 .claude-plugin/
   plugin.json       ← plugin name, version, author metadata
   marketplace.json  ← marketplace listing
@@ -87,7 +87,11 @@ Instructions for the AI...
 - Skills target **Claude Code** as the canonical runtime (bash tool, fd, rg, qmd, Agent dispatch). Cursor / Claude Desktop installs work to the extent the host supports the same primitives. Earlier "Desktop fallback" branches that asked the AI to detect environment and produce manual-save markdown were retired — the cognitive cost of every skill body branching on runtime outweighed the marginal utility.
 - The `workflow` skill is the orchestrator — it coordinates all other skills. New issues, session starts, and context recovery all route through it first.
 - **tdd-design** is the single skill for specification + TDD implementation. It runs a behavioral-contract conversation (Phase 1) and immediately starts the red-green-refactor cycle (Phase 2). There is no separate test-design skill.
-- The plugin ships **hooks** in `hooks/` that fire on SessionStart (engineering vault state) and UserPromptSubmit (skill-trigger pattern detection). They are configured in `hooks/hooks.json` and run in Claude Code. The skill bodies' `when_to_use` triggers continue to work when hooks aren't running (e.g., Cursor) — recall is just less proactive.
+- The plugin ships one hook script (`hooks/parse_session.py`) configured in
+  `hooks/hooks.json`. It fires on `PostToolUse` and `Stop`, reading new JSONL
+  entries from the current session transcript via a cursor and appending
+  structured log entries to `~/engineering/sessions/`. Session logs are the
+  input to the periodic `dream` consolidation job.
 - **Subagent dispatch pattern.** Read-only, batch-style skills (`deep-review`, `dead-reckoning`, `survey`) are slim dispatch shims — they call the Agent tool with the matching `subagent_type`, surface the subagent's report, and then Read the high-signal files listed in the report. The full protocol lives in `agents/<name>.md` as the subagent's system prompt; this keeps file reads and qmd queries out of the main session context. Subagents are strictly read-only — they do not write facts or spikes. When adding a new read-only skill, prefer this pattern: SKILL.md = trigger + dispatch, `agents/<name>.md` = lean protocol (~100 lines, no interactive loops).
 
 ## Engineering workspace (not in this repo)

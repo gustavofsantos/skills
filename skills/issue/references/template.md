@@ -6,7 +6,6 @@ id: "{id}"
 title: "{title}"
 created: {today}
 updated: {today}
-sessions: []
 ---
 
 ## Objective
