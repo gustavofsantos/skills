@@ -89,6 +89,7 @@ npx skills remove -g        # uninstall
 | [knowledge](skills/knowledge/SKILL.md) | Manages the long-term knowledge library — atomic facts, spike narratives, and business domain terms stored in ~/engineering/. |
 | [dead-reckoning](skills/dead-reckoning/SKILL.md) | Structured code investigation that dispatches a read-only subagent to trace behavior and answer architectural questions, returning behavioral claims and high-signal files to load. |
 | [survey](skills/survey/SKILL.md) | Surveys an unfamiliar repository by dispatching a read-only subagent across Identity, Config, and Integration zones, returning findings and fact candidates. |
+| [auto-spike](skills/auto-spike/SKILL.md) | Autonomously extends open investigation threads across the spike library — selects up to 4 spikes with unresolved SCOPE/DYNAMIC records, traverses the relevant code, and writes child spikes. |
 
 ### Planning & Tracking
 
@@ -116,6 +117,7 @@ report enters the main session.
 | `deep-review` | [deep-review](skills/deep-review/SKILL.md) | Loads ~400 lines of analytical references + the full diff. Runs on `opus`. Concurrent reviews possible. |
 | `dead-reckoning` | [dead-reckoning](skills/dead-reckoning/SKILL.md) | Reads code and knowledge base across many files without filling the main session context. Returns claims + high-signal files. |
 | `survey` | [survey](skills/survey/SKILL.md) | Discovers an unfamiliar repo across three zones without filling the main session context. Two surveys can run concurrently on orthogonal focus areas. |
+| `auto-spike` | [auto-spike](skills/auto-spike/SKILL.md) | Selects open spike threads, traverses the relevant code, writes child spikes, and updates parent SCOPE/DYNAMIC records. Runs headless on a schedule via `bin/auto-spike-run`. |
 
 Subagents need the `Agent` tool — Claude Code is the canonical runtime for
 the dispatch shims. Hosts without `Agent` will see a SKILL.md that reads
