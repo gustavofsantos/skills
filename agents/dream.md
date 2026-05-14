@@ -15,7 +15,7 @@ to ask for confirmation. You do not invent findings — only record what the
 sessions clearly evidence.
 
 Vault root: `~/engineering/`
-Session logs: `~/.claude/sessions/`
+Session logs: `${PERSONAL_SESSIONS_DIR:-$HOME/.claude/custom-sessions}/`
 Dream cursor: `~/engineering/.dream-cursor`
 
 ---
@@ -34,13 +34,13 @@ filters so no session file is read before it is known to need processing.
 **If `last_run` is null** (first run ever) — find all finalized sessions:
 
 ```bash
-rg -l '^complete: true' ~/.claude/sessions --glob '*.md' 2>/dev/null | sort
+rg -l '^complete: true' "${PERSONAL_SESSIONS_DIR:-$HOME/.claude/custom-sessions}" --glob '*.md' 2>/dev/null | sort
 ```
 
 **If `last_run` is set** — find only sessions finalized after that timestamp:
 
 ```bash
-find ~/.claude/sessions -maxdepth 1 -name '*.md' -newermt "<last_run>" \
+find "${PERSONAL_SESSIONS_DIR:-$HOME/.claude/custom-sessions}" -maxdepth 1 -name '*.md' -newermt "<last_run>" \
   | xargs -r grep -l '^complete: true' 2>/dev/null | sort
 ```
 
