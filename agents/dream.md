@@ -50,6 +50,19 @@ boundary races when two runs happen in rapid succession).
 **If the work list is empty, skip directly to Report and exit cleanly.** Do not read
 any session files.
 
+**Separate the work list into two tiers:**
+
+```bash
+# Subagent sessions — tagged with 'subagent: true' in frontmatter
+rg -l '^subagent: true' <work-list-files> 2>/dev/null
+```
+
+- **Primary sessions** — everything NOT tagged as a subagent. Mine fully in Stage 2.
+- **Subagent sessions** — tagged `subagent: true`. Do NOT read individually. Instead,
+  note their count and any Agent tool call records in the parent session that spawned
+  them. Subagent sessions are included in `processed` so they are not re-examined on
+  future runs.
+
 Load current vault state — issues and recent facts:
 
 ```bash
@@ -68,10 +81,15 @@ fd -t f -e md . ~/engineering/facts -d 1 2>/dev/null \
 
 ## Stage 2 — Mine
 
-Read each session in the work list. If the list has more than 8 files, or any single
-file exceeds ~150 lines, skim tool-call entries and focus on user/agent exchange blocks
-— do not read every line verbatim. Signal lives in the conversational turns, not in
-repeated file-path or bash-command entries.
+Read each **primary** session in the work list (subagent sessions are skipped — see
+Stage 1). If the list has more than 8 files, or any single file exceeds ~150 lines,
+skim tool-call entries and focus on user/agent exchange blocks — do not read every line
+verbatim. Signal lives in the conversational turns, not in repeated file-path or
+bash-command entries.
+
+When a primary session contains `Tool call: Agent [<subagent_type>]` entries, note the
+subagent type and description as context for the surrounding work — do not read the
+corresponding subagent session file.
 
 For each session, extract the following signal types. Use judgment, not
 keyword matching — the session log has enough structure to identify these
@@ -311,7 +329,7 @@ After writing, emit a brief summary to stdout (the cron log captures this):
 
 ```
 Dream run: YYYY-MM-DD
-Sessions processed: N
+Sessions processed: N  (primary: N, subagent: N skipped)
 Facts created: N  (FACT-NNN, FACT-NNN, ...)
 Issues updated: N  (issue slugs)
 Skipped: N  (duplicate or vague signal)

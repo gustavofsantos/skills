@@ -10,10 +10,16 @@ Supports two agent runtimes, selected via --agent:
     pipeline to pair tool_use/tool_result entries, and appends structured
     log entries to ~/engineering/sessions/<date>-<session-id>.md.
 
+    Sessions spawned by a parent agent (subagents) are tagged with
+    `subagent: true` in their frontmatter. The dream consolidation pass
+    processes them at reduced depth to avoid bloating the work list.
+
   --agent cursor
-    Called by Cursor afterFileEdit, beforeShellExecution, beforeMCPExecution,
-    and stop hooks.  Each hook invocation carries a single event as JSON on
-    stdin; there is no JSONL transcript to seek through.
+    Called by Cursor stop and afterFileEdit hooks.  On stop, reads the
+    full JSONL transcript (transcript_path from the hook payload) and
+    applies the same MapReduce pipeline as the Claude adapter, giving
+    complete session coverage.  afterFileEdit events capture edit_diff
+    signal that is stored in state and merged into the transcript pass.
 
 Usage (Claude Code hooks.json):
   PostToolUse: python3 .../parse_session.py --agent claude
@@ -89,6 +95,10 @@ def main_claude(args, payload):
     if not session_id:
         sys.exit(0)
 
+    # parent_session_id is present when this session was spawned by an Agent
+    # tool call. Tag the session file so dream can skip deep-mining it.
+    is_subagent = bool(payload.get("parent_session_id"))
+
     project = payload.get("cwd", os.getcwd())
     jsonl_path = find_jsonl(session_id)
     if not jsonl_path:
@@ -108,7 +118,9 @@ def main_claude(args, payload):
     reduced = reduce_records(mapped)
 
     if reduced:
-        session_file = get_or_create_session_file(session_id, state, project)
+        session_file = get_or_create_session_file(
+            session_id, state, project, is_subagent=is_subagent
+        )
         append_log(session_file, reduced)
 
     state["cursor"] = raw[-1][0] + 1
@@ -122,11 +134,19 @@ def main_claude(args, payload):
 # ---------------------------------------------------------------------------
 
 def main_cursor(args, payload):
-    """Handle a single Cursor hook event from stdin."""
+    """Handle Cursor hook events.
+
+    On stop: read the full JSONL transcript via transcript_path (if present)
+    and run the same MapReduce pipeline as the Claude adapter. Edit-diff data
+    accumulated during earlier afterFileEdit events is merged in.
+
+    On afterFileEdit: compute and store edit_diff in state for later merge.
+
+    Other events: emit permission response only.
+    """
     event           = payload.get("hook_event_name", "")
     workspace_roots = payload.get("workspace_roots", [])
     project         = workspace_roots[0] if workspace_roots else os.getcwd()
-    # Cursor sends conversation_id in IDE mode; generation_id in CLI mode.
     conversation_id = payload.get("conversation_id") or payload.get("generation_id", "")
     ts              = datetime.now(timezone.utc).isoformat()
 
@@ -135,19 +155,111 @@ def main_cursor(args, payload):
         _cursor_respond(event)
         sys.exit(0)
 
-    state  = load_state(conversation_id)
-    record = _cursor_map_event(event, payload, ts)
+    state = load_state(conversation_id)
 
-    if record:
-        session_file = get_or_create_session_file(conversation_id, state, project)
-        append_log(session_file, [record])
+    is_stop = args.finalize or event == "stop"
 
-    if args.finalize or event == "stop":
+    if event == "afterFileEdit":
+        # Accumulate edit_diff per file for later merge into transcript pass.
+        file_path = payload.get("file_path", "")
+        if file_path:
+            diff_summary = _compute_edit_diff(file_path)
+            edits = state.setdefault("cursor_edits", [])
+            edits.append({"file_path": file_path, "edit_diff": diff_summary, "timestamp": ts})
+            save_state(conversation_id, state)
+
+    elif is_stop:
+        transcript_path = payload.get("transcript_path", "")
+        if transcript_path and Path(transcript_path).exists():
+            _cursor_process_full_transcript(
+                conversation_id, state, project, transcript_path
+            )
+        else:
+            # No transcript available — fall back to a lightweight stop record.
+            record = _cursor_stop_record(payload, ts)
+            if record:
+                session_file = get_or_create_session_file(conversation_id, state, project)
+                append_log(session_file, [record])
         finalize(conversation_id, state)
-    else:
+        _cursor_respond(event)
+        return
+
+    elif event not in CURSOR_PERMISSION_HOOKS:
+        # Non-edit, non-stop, non-permission event — no log record needed.
         save_state(conversation_id, state)
 
     _cursor_respond(event)
+
+
+def _cursor_process_full_transcript(
+    conversation_id: str, state: dict, project: str, transcript_path: str
+) -> None:
+    """Read the Cursor JSONL transcript and apply MapReduce, then append to session log.
+
+    Cursor JSONL format differs from Claude Code in two ways:
+    - role lives at the top level of each entry, not inside 'message'
+    - tool results are not emitted as separate 'user' entries; only tool_use
+      blocks appear (exit codes remain unknown: '?')
+
+    Edit-diff data stored by earlier afterFileEdit events is merged in by
+    matching file paths that appear as tool call inputs.
+    """
+    raw = _cursor_read_transcript(transcript_path)
+    if not raw:
+        return
+
+    mapped  = map_entries(raw, cursor_format=True)
+    reduced = reduce_records(mapped)
+
+    # Merge accumulated edit_diff into matching tool records.
+    edit_index = {e["file_path"]: e["edit_diff"]
+                  for e in state.get("cursor_edits", [])}
+    if edit_index:
+        for record in reduced:
+            if record.get("kind") == "tool" and record.get("tool") in (
+                "Edit", "Write", "StrReplace"
+            ):
+                inp = record.get("input", "")
+                if inp in edit_index:
+                    record["edit_diff"] = edit_index[inp]
+
+    if reduced:
+        session_file = get_or_create_session_file(conversation_id, state, project)
+        append_log(session_file, reduced)
+
+
+def _cursor_read_transcript(transcript_path: str) -> list[tuple[int, dict]]:
+    """Read Cursor JSONL transcript from disk; return (line_index, entry) pairs."""
+    entries = []
+    try:
+        with open(transcript_path) as f:
+            for idx, line in enumerate(f):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entries.append((idx, json.loads(line)))
+                except json.JSONDecodeError as e:
+                    debug(f"Cursor transcript JSON error at line {idx}: {e}")
+    except OSError as e:
+        debug(f"Cannot read Cursor transcript {transcript_path}: {e}")
+    return entries
+
+
+def _cursor_stop_record(payload: dict, ts: str) -> dict | None:
+    """Fallback stop record when no transcript_path is available."""
+    stats = {k: payload.get(k)
+             for k in ("input_tokens", "output_tokens", "cache_read_tokens",
+                       "cache_write_tokens", "loop_count")
+             if payload.get(k) is not None}
+    if not stats:
+        return None
+    return {
+        "kind":      "agent",
+        "text":      f"[session ended] {json.dumps(stats)}",
+        "idx":       0,
+        "timestamp": ts,
+    }
 
 
 def _compute_edit_diff(file_path: str) -> dict:
@@ -193,49 +305,6 @@ def _compute_edit_diff(file_path: str) -> dict:
         }
     except Exception:
         return {"signal": "unknown"}
-
-
-def _cursor_map_event(event: str, payload: dict, ts: str) -> dict | None:
-    """Convert a Cursor hook payload to an internal session log record."""
-    if event == "afterFileEdit":
-        file_path = payload.get("file_path", "")
-        diff_summary = _compute_edit_diff(file_path)
-        return {
-            "kind":      "tool",
-            "tool":      "Edit",
-            "input":     file_path,
-            "exit_code": 0,
-            "edit_diff": diff_summary,
-            "idx":       0,
-            "timestamp": ts,
-        }
-
-    if event == "beforeShellExecution":
-        # Pre-execution: exit code is not yet known.
-        return {
-            "kind":      "tool",
-            "tool":      "Bash",
-            "input":     payload.get("command", ""),
-            "exit_code": "?",
-            "idx":       0,
-            "timestamp": ts,
-        }
-
-    if event == "beforeMCPExecution":
-        tool_name = payload.get("tool_name", "Unknown")
-        arguments = payload.get("arguments", {})
-        inp = json.dumps(arguments)[:120] if not isinstance(arguments, str) else arguments[:120]
-        return {
-            "kind":      "tool",
-            "tool":      f"MCP:{tool_name}",
-            "input":     inp,
-            "exit_code": "?",
-            "idx":       0,
-            "timestamp": ts,
-        }
-
-    # stop and other notification-only events produce no log record.
-    return None
 
 
 def _cursor_respond(event: str) -> None:
@@ -370,7 +439,6 @@ def finalize(session_id: str, state: dict) -> None:
             txt = txt.replace("complete: false", "complete: true", 1)
             try:
                 quality = _compute_quality_signal(path)
-                # Insert quality_signal into frontmatter before the closing ---
                 txt = txt.replace("complete: true\n---", f"complete: true\nquality_signal: {quality}\n---", 1)
             except Exception:
                 pass
@@ -398,37 +466,31 @@ def read_from_cursor(jsonl_path: Path, cursor: int) -> list[tuple[int, dict]]:
 
 
 # ---------------------------------------------------------------------------
-# MAP phase (Claude Code only)
+# MAP phase
 # ---------------------------------------------------------------------------
 
-def map_entries(raw: list[tuple[int, dict]]) -> list[dict]:
+def map_entries(raw: list[tuple[int, dict]], cursor_format: bool = False) -> list[dict]:
     """
     Emit typed records from raw JSONL entries.
 
-    Expected JSONL shapes (based on Anthropic Messages API):
+    Handles two JSONL layouts:
 
-    User text turn:
-      {"type": "user", "message": {"role": "user", "content": "text"}, "timestamp": "..."}
+    Claude Code (cursor_format=False):
+      {"type": "user"|"assistant", "message": {"role": "...", "content": [...]}, "timestamp": "..."}
 
-    User turn carrying tool results:
-      {"type": "user", "message": {"role": "user", "content": [
-        {"type": "tool_result", "tool_use_id": "toolu_...", "content": "...", "is_error": false}
-      ]}, "timestamp": "..."}
-
-    Assistant text + tool call turn:
-      {"type": "assistant", "message": {"role": "assistant", "content": [
-        {"type": "text", "text": "..."},
-        {"type": "tool_use", "id": "toolu_...", "name": "Bash", "input": {"command": "..."}}
-      ]}, "timestamp": "..."}
-
-    Adjust the field names below if real JSONL differs.
+    Cursor (cursor_format=True):
+      {"role": "user"|"assistant", "message": {"content": [...]}}
+      Role lives at the top level; tool results are not emitted as separate
+      entries so tool records carry exit_code "?" and are not reduced.
     """
     records = []
 
     for idx, entry in raw:
         ts  = entry.get("timestamp", "")
-        msg = entry.get("message", entry)  # some formats inline the message fields
-        role    = msg.get("role", "")
+        msg = entry.get("message", entry)
+
+        # Claude Code puts role inside message; Cursor puts it at the top level.
+        role = msg.get("role", "") or entry.get("role", "")
         content = msg.get("content", "")
 
         if role == "user":
@@ -475,7 +537,7 @@ def _agent_record(text: str, idx: int, ts: str) -> dict:
 def _tool_call_record(block: dict, idx: int, ts: str) -> dict:
     name  = block.get("name", "Unknown")
     inp   = block.get("input", {})
-    return {
+    record = {
         "kind":        "tool_call",
         "tool_use_id": block.get("id", ""),
         "tool":        name,
@@ -483,6 +545,12 @@ def _tool_call_record(block: dict, idx: int, ts: str) -> dict:
         "idx":         idx,
         "timestamp":   ts,
     }
+    # For Agent tool calls, capture subagent metadata for richer log entries.
+    if name == "Agent":
+        subagent_type = inp.get("subagent_type", "general-purpose")
+        record["subagent_type"] = subagent_type
+        record["background"]    = bool(inp.get("run_in_background", False))
+    return record
 
 
 def _tool_result_record(block: dict, idx: int, ts: str) -> dict:
@@ -499,14 +567,23 @@ def _tool_result_record(block: dict, idx: int, ts: str) -> dict:
 
 def _format_tool_input(name: str, inp: dict) -> str:
     """Return only the meaningful part of the tool input — never the output."""
-    if name == "Bash":
+    if name in ("Bash", "Shell"):
         return inp.get("command", "")
     if name in ("Read", "Write", "Edit", "MultiEdit"):
         return inp.get("file_path", inp.get("path", ""))
+    if name == "StrReplace":
+        return inp.get("path", inp.get("file_path", ""))
     if name == "Glob":
         return inp.get("pattern", "")
     if name == "Grep":
         return f"{inp.get('pattern', '')} {inp.get('path', '')}".strip()
+    if name == "Agent":
+        subagent_type = inp.get("subagent_type", "general-purpose")
+        description   = inp.get("description", "")
+        suffix = " [bg]" if inp.get("run_in_background") else ""
+        return f"[{subagent_type}] {description}{suffix}"[:120]
+    if name == "AwaitShell":
+        return f"[await task:{inp.get('task_id', '')}]"
     # Fallback: first string value found, truncated
     for v in inp.values():
         if isinstance(v, str):
@@ -536,12 +613,14 @@ def _extract_exit_code(content, is_error: bool) -> int | str:
 
 
 # ---------------------------------------------------------------------------
-# REDUCE phase (Claude Code only)
+# REDUCE phase
 # ---------------------------------------------------------------------------
 
 def reduce_records(mapped: list[dict]) -> list[dict]:
     """
     Merge tool_call + tool_result pairs by tool_use_id.
+    Tool calls with no matching result keep exit_code "?" (normal for Cursor
+    transcripts which do not emit tool_result entries).
     Everything else passes through unchanged.
     Sort the result by original JSONL line index.
     """
@@ -560,14 +639,18 @@ def reduce_records(mapped: list[dict]) -> list[dict]:
     merged_tools = []
     for uid, call in tool_calls.items():
         result = tool_results.get(uid, {})
-        merged_tools.append({
+        merged = {
             "kind":      "tool",
             "tool":      call["tool"],
             "input":     call["input"],
             "exit_code": result.get("exit_code", "?"),
             "idx":       call["idx"],
             "timestamp": call["timestamp"],
-        })
+        }
+        if "subagent_type" in call:
+            merged["subagent_type"] = call["subagent_type"]
+            merged["background"]    = call.get("background", False)
+        merged_tools.append(merged)
 
     return sorted(others + merged_tools, key=lambda r: r["idx"])
 
@@ -601,15 +684,25 @@ def format_records(records: list[dict]) -> str:
             inp   = r["input"]
             code  = r["exit_code"]
 
-            if tool == "Bash":
+            if tool in ("Bash", "Shell"):
                 lines = [
                     header,
-                    "Tool call: Bash",
+                    f"Tool call: {tool}",
                     "```",
                     inp,
                     "```",
                     f"> exit code: {code}",
                 ]
+            elif tool == "Agent":
+                subagent_type = r.get("subagent_type", "general-purpose")
+                bg_flag = " [background]" if r.get("background") else ""
+                lines = [
+                    header,
+                    f"Tool call: Agent [{subagent_type}]{bg_flag}",
+                    f"> {inp}",
+                ]
+                if code != "?":
+                    lines.append(f"> exit code: {code}")
             else:
                 lines = [
                     header,
@@ -638,7 +731,9 @@ def _fmt_ts(ts: str) -> str:
 # Session file
 # ---------------------------------------------------------------------------
 
-def get_or_create_session_file(session_id: str, state: dict, project: str) -> Path:
+def get_or_create_session_file(
+    session_id: str, state: dict, project: str, is_subagent: bool = False
+) -> Path:
     if sf := state.get("session_file"):
         p = Path(sf)
         if p.exists():
@@ -648,14 +743,18 @@ def get_or_create_session_file(session_id: str, state: dict, project: str) -> Pa
     short_id     = session_id[:8]
     session_file = SESSIONS_DIR / f"{date_str}-{short_id}.md"
 
-    session_file.write_text(
+    frontmatter = (
         f"---\n"
         f"session_id: {session_id}\n"
         f"date: {date_str}\n"
         f"project: {project}\n"
         f"complete: false\n"
-        f"---\n\n"
     )
+    if is_subagent:
+        frontmatter += "subagent: true\n"
+    frontmatter += "---\n\n"
+
+    session_file.write_text(frontmatter)
 
     state["session_file"] = str(session_file)
     return session_file
