@@ -26,10 +26,10 @@ import sys
 from pathlib import Path
 
 ENGINEERING_DIR = Path.home() / "engineering"
-QMD_TIMEOUT     = 6      # seconds — must stay well under Claude Code hook deadline
+QMD_TIMEOUT     = 10      # seconds — must stay well under Claude Code hook deadline
 MIN_SCORE       = "0.50"
 MAX_RESULTS     = "5"
-MAX_KEYWORDS    = 10
+MAX_KEYWORDS    = 20
 
 # ─── Stopwords ────────────────────────────────────────────────────────────────
 
@@ -68,12 +68,14 @@ STOPWORDS = _EN | _PT
 # ─── Keyword extraction ───────────────────────────────────────────────────────
 
 def extract_keywords(text: str) -> list[str]:
-    words = re.findall(r"\b[a-zA-ZÀ-ÿ]{3,}\b", text.lower())
+    # Match URLs as single tokens, then regular words
+    pattern = r"(?:https?://\S+|ftps?://\S+|\b[a-zA-ZÀ-ÿ]{3,}\b)"
+    matches = re.findall(pattern, text)
     seen, result = set(), []
-    for w in words:
-        if w not in STOPWORDS and w not in seen:
-            seen.add(w)
-            result.append(w)
+    for m in matches:
+        if m not in STOPWORDS and m not in seen:
+            seen.add(m)
+            result.append(m)
     return result[:MAX_KEYWORDS]
 
 
@@ -84,7 +86,7 @@ def query_knowledge(query: str) -> list[str]:
     try:
         r = subprocess.run(
             ["qmd", "query", query, "-c", "engineering",
-             "--min-score", MIN_SCORE, "-n", MAX_RESULTS, "--json"],
+             "--min-score", MIN_SCORE, "-n", MAX_RESULTS, "--no-rerank", "--json"],
             capture_output=True, text=True, timeout=QMD_TIMEOUT,
         )
     except FileNotFoundError:
