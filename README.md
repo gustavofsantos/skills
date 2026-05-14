@@ -131,7 +131,7 @@ The plugin ships one hook script (`hooks/parse_session.py`) configured in `hooks
 | Hook | Script | What it does |
 |---|---|---|
 | `UserPromptSubmit` | `hooks/keyword_probe.py` | Extracts keywords from the user prompt, queries `~/engineering/` via `qmd`, and injects matching fact/spike/term file paths as `additionalContext` so Claude self-steers toward relevant memory before responding. |
-| `PostToolUse` | `hooks/parse_session.py` | Reads new JSONL entries since last cursor, runs MapReduce to pair tool events, appends structured log to `~/engineering/sessions/`. |
+| `PostToolUse` | `hooks/parse_session.py` | Reads new JSONL entries since last cursor, runs MapReduce to pair tool events, appends structured log to `~/.claude/sessions/`. |
 | `Stop`        | `hooks/parse_session.py --finalize` | Final flush of session log; marks session complete in frontmatter. |
 
 Hooks run in **Claude Code only**. Cursor and Claude Desktop installations

@@ -45,7 +45,7 @@ from collections import defaultdict
 import subprocess
 
 ENGINEERING_DIR = Path.home() / "engineering"
-SESSIONS_DIR    = ENGINEERING_DIR / "sessions"
+SESSIONS_DIR    = Path.home() / ".claude" / "sessions"
 DEBUG_LOG       = SESSIONS_DIR / ".parse-debug.log"
 
 # Cursor hook types that require a permission response on stdout.

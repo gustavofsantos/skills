@@ -27,7 +27,7 @@ Agent(
   description: "Consolidate session logs into engineering vault",
   prompt: "Run the full 4-stage dream protocol.
            Vault root: ~/engineering/
-           Session logs: ~/engineering/sessions/
+           Session logs: ~/.claude/sessions/
            Write directly. Commit when done.
            Return the summary report."
 )

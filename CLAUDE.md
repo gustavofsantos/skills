@@ -90,7 +90,7 @@ Instructions for the AI...
 - The plugin ships one hook script (`hooks/parse_session.py`) configured in
   `hooks/hooks.json`. It fires on `PostToolUse` and `Stop`, reading new JSONL
   entries from the current session transcript via a cursor and appending
-  structured log entries to `~/engineering/sessions/`. Session logs are the
+  structured log entries to `~/.claude/sessions/`. Session logs are the
   input to the periodic `dream` consolidation job.
 - **Subagent dispatch pattern.** Read-only, batch-style skills (`deep-review`, `dead-reckoning`, `survey`) are slim dispatch shims — they call the Agent tool with the matching `subagent_type`, surface the subagent's report, and then Read the high-signal files listed in the report. The full protocol lives in `agents/<name>.md` as the subagent's system prompt; this keeps file reads and qmd queries out of the main session context. Subagents are strictly read-only — they do not write facts or spikes. When adding a new read-only skill, prefer this pattern: SKILL.md = trigger + dispatch, `agents/<name>.md` = lean protocol (~100 lines, no interactive loops).
 

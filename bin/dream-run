@@ -15,7 +15,7 @@ set -euo pipefail
 
 LOG="$HOME/engineering/.dream-run.log"
 CURSOR="$HOME/engineering/.dream-cursor"
-SESSIONS_DIR="$HOME/engineering/sessions"
+SESSIONS_DIR="$HOME/.claude/sessions"
 
 # Rotate log — keep last 500 lines
 if [ -f "$LOG" ]; then
