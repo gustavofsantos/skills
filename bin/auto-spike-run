@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# bin/auto-spike-run
+#
+# Headless auto-spike job. Wire into cron or launchd:
+#
+#   crontab:
+#     0 3 * * * /path/to/skills/bin/auto-spike-run
+#
+#   launchd (~/Library/LaunchAgents/com.gustavofsantos.auto-spike.plist):
+#     StartCalendarInterval: run daily at 03:00
+#
+# Logs to ~/engineering/.auto-spike-run.log (last 500 lines kept).
+#
+# Usage:
+#   bin/auto-spike-run              # full run
+#   bin/auto-spike-run --dry-run    # list selected spikes and threads, no traversal
+
+set -euo pipefail
+
+LOG="$HOME/engineering/.auto-spike-run.log"
+SPIKES_DIR="$HOME/engineering/spikes"
+DRY_RUN=false
+
+# --- args ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=true; shift ;;
+    *) echo "Unknown argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+# Rotate log — keep last 500 lines
+if [ -f "$LOG" ]; then
+  tail -500 "$LOG" > "${LOG}.tmp" && mv "${LOG}.tmp" "$LOG"
+fi
+
+log() {
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" | tee -a "$LOG"
+}
+
+# Guard: no spikes directory
+if [ ! -d "$SPIKES_DIR" ]; then
+  log "No spikes directory at $SPIKES_DIR. Nothing to do."
+  exit 0
+fi
+
+# Guard: check for spikes with open threads
+OPEN_COUNT=0
+if command -v fd &>/dev/null; then
+  SPIKE_FILES=$(fd -t f -e md . "$SPIKES_DIR" -d 1 2>/dev/null | grep -v '/archive/' || true)
+else
+  SPIKE_FILES=$(find "$SPIKES_DIR" -maxdepth 1 -type f -name '*.md' 2>/dev/null | grep -v '/archive/' || true)
+fi
+
+if [ -z "$SPIKE_FILES" ]; then
+  log "No spike files found. Nothing to do."
+  exit 0
+fi
+
+while IFS= read -r spike; do
+  [ -z "$spike" ] && continue
+  if grep -qE '^\[SCOPE-[0-9]+\]' "$spike" 2>/dev/null; then
+    # Check if any SCOPE record is not yet resolved
+    if grep -E '^\[SCOPE-[0-9]+\]' "$spike" 2>/dev/null | grep -qv '→ investigated'; then
+      OPEN_COUNT=$((OPEN_COUNT + 1))
+      continue
+    fi
+  fi
+  if grep -qE '^\[DYNAMIC-[0-9]+\]' "$spike" 2>/dev/null; then
+    if grep -E '^\[DYNAMIC-[0-9]+\]' "$spike" 2>/dev/null | grep -qv '→ investigated'; then
+      OPEN_COUNT=$((OPEN_COUNT + 1))
+      continue
+    fi
+  fi
+  # Check for non-empty Open questions section
+  if python3 - "$spike" <<'PYEOF' 2>/dev/null; then
+import sys, re
+content = open(sys.argv[1]).read()
+m = re.search(r'## Open questions\n(.*?)(\n##|\Z)', content, re.DOTALL)
+if m and m.group(1).strip():
+    sys.exit(0)
+sys.exit(1)
+PYEOF
+    OPEN_COUNT=$((OPEN_COUNT + 1))
+  fi
+done <<< "$SPIKE_FILES"
+
+if [ "$OPEN_COUNT" -eq 0 ]; then
+  log "No spikes with open threads. Nothing to do."
+  exit 0
+fi
+log "Found $OPEN_COUNT spike(s) with open threads."
+
+# Dry run: list what would be selected and exit
+if [ "$DRY_RUN" = true ]; then
+  log "Dry run — listing spikes with open threads (no traversal will run)."
+  echo ""
+  echo "Spikes with open threads:"
+  while IFS= read -r spike; do
+    [ -z "$spike" ] && continue
+    has_repo=$(grep -m1 '^repo:' "$spike" 2>/dev/null || echo "")
+    repo_note=""
+    [ -z "$has_repo" ] && repo_note=" [NO repo: field — would be skipped]"
+    echo "  $spike$repo_note"
+  done <<< "$SPIKE_FILES"
+  echo ""
+  echo "Selection algorithm: top 2 by mtime + up to 2 random from remainder = up to 4."
+  echo "Run without --dry-run to execute."
+  exit 0
+fi
+
+log "Starting auto-spike run."
+
+# Invoke Claude Code headless.
+# Adjust the skill namespace if using the marketplace install
+# (e.g., /gustavofsantos:auto-spike instead of /auto-spike).
+claude --print \
+  --dangerously-skip-permissions \
+  "Run the auto-spike skill. Select open spike threads, traverse the code, write child spikes, update parent records, and commit." \
+  2>> "$LOG" \
+  | tee -a "$LOG"
+
+EXIT=$?
+if [ $EXIT -eq 0 ]; then
+  log "Auto-spike run complete."
+else
+  log "Auto-spike run exited with code $EXIT."
+fi
+
+exit $EXIT
