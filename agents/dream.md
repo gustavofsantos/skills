@@ -125,6 +125,15 @@ For hotspots: check if a fact already documents the file's role. If not,
 note it as a candidate for a future `dead-reckoning` investigation rather
 than creating a fact from file frequency alone.
 
+**Stale fact check.** For each fact file loaded in Stage 1, check the `validated_at`
+field. If a fact has:
+- `confidence: validated` and `validated_at` older than 90 days → emit as stale
+- `confidence: asserted` and `created` older than 180 days with no sessions referencing
+  it → emit as stale-asserted
+
+Collect stale facts for inclusion in the Report under `## Stale facts`. Do not change
+the fact files themselves.
+
 Discard signal that is:
 - One-off and not actionable (debugging noise, transient errors)
 - Already covered by an existing fact or issue context
@@ -187,6 +196,116 @@ basenames of all session files processed in this run.
 
 ---
 
+## Stage 5 — Skill induction and anti-pattern extraction
+
+Scan the sessions processed in this run. Produce two candidate lists.
+
+**Priority rule:** explicit feedback tags (`/good`, `/bad`, `/wrong` — detected as
+`[FEEDBACK:GOOD]`, `[FEEDBACK:BAD]`, `[FEEDBACK:WRONG]` lines in session logs) are
+ground-truth signal and are processed first, before any inferred pattern analysis.
+High-confidence tag-derived entries may use `confidence: high` directly.
+
+---
+
+### List A — Skill improvement candidates
+
+Three inferred signal types (lower priority):
+
+**Weak trigger** — agent accomplished something a skill covers but did NOT invoke that
+skill by name. Suggests `when_to_use` is missing a trigger phrase.
+Shape: multi-step pattern in session matching a known skill's body with no skill invocation.
+
+**New skill candidate** — agent executed the same multi-step pattern in 2+ sessions
+in this run (or 2+ times within one session) with no matching skill.
+Shape: repeated tool call sequence (same tools, same logical order) solving the same
+category of task.
+
+**Skill correction** — human corrected agent mid-execution in a way that contradicts a
+skill's written instructions.
+Shape: agent executes per skill → user message contradicting the approach → agent pivots.
+
+One explicit signal type (highest priority — treat as ground truth):
+
+**Explicit `/good` tag** — a `[FEEDBACK:GOOD]` line in session log. The immediately
+preceding agent exchange is a golden pattern. Extract as `new_candidate` or
+`weak_trigger` with `confidence: high`.
+
+---
+
+### List B — Anti-pattern candidates
+
+**Explicit `/bad` tag** — `[FEEDBACK:BAD]` line. The immediately preceding agent
+exchange is an anti-pattern. Extract the agent's approach as the anti-pattern and the
+user's correction as the target behavior.
+
+**Explicit `/wrong` tag** — `[FEEDBACK:WRONG]` line. Agent misread the goal.
+Anti-pattern: the stated approach. Correction: what the user clarified.
+
+**Repeated failure pattern** — same tool call sequence failed (non-zero exit) in 2+
+sessions, with the user correcting to an alternative approach each time. Infer the
+first approach as an anti-pattern for that project context.
+
+**Scope violation** — agent touched files or systems the user explicitly said were
+off-limits (check issue `## Off-limits` or `## Scope` sections in session context).
+Anti-pattern: the scope-expanding action.
+
+---
+
+### Output format
+
+Append all candidates in a single write operation to `~/engineering/skill-induction-queue.md`.
+If the file does not exist, create it with the header:
+```
+# Skill Induction Queue
+
+Review and apply manually.
+
+```
+
+For each List A entry, append:
+
+```
+
+---
+list: improvement
+date: YYYY-MM-DD
+sessions: [session-file-basename, ...]
+skill_affected: <skill name, or "new">
+signal_type: weak_trigger | new_candidate | skill_correction | explicit_good
+confidence: high | medium | low
+evidence: >
+  <One paragraph: what the session log shows. Specific turns or tool call patterns.
+  No invented details — only what is directly evidenced.>
+proposed_change: >
+  <Concrete edit: new trigger phrase for when_to_use, new instruction line,
+  or for new skills: title + one-sentence description + 2-3 trigger phrases.>
+```
+
+For each List B entry, append:
+
+```
+
+---
+list: anti_pattern
+date: YYYY-MM-DD
+sessions: [session-file-basename, ...]
+skill_affected: <skill name, or "new", or "general">
+signal_type: explicit_bad | explicit_wrong | repeated_failure | scope_violation
+confidence: high | medium | low
+context: <project slug or "global" if not project-specific>
+evidence: >
+  <What the session shows the agent doing wrong.>
+proposed_change: >
+  <Concrete rule to add: an Off-limits line to an existing skill, a new exclusion
+  clause in when_to_use, or a new "Anti-patterns" section in the skill body.>
+```
+
+If no signals are found, note "No induction signals" in the Report and do not write
+to the queue file. The queue is reviewed and applied by the human — never modify
+any SKILL.md directly.
+
+---
+
 ## Report
 
 After writing, emit a brief summary to stdout (the cron log captures this):
@@ -197,6 +316,9 @@ Sessions processed: N
 Facts created: N  (FACT-NNN, FACT-NNN, ...)
 Issues updated: N  (issue slugs)
 Skipped: N  (duplicate or vague signal)
+Skill induction candidates: N  (skill names or "new")
+Anti-pattern candidates: N  (skill names or "general")
+Stale facts flagged: N  (FACT-NNN, ...)
 Next run: check ~/engineering/.dream-cursor
 ```
 

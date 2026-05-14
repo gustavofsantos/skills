@@ -150,14 +150,62 @@ def main_cursor(args, payload):
     _cursor_respond(event)
 
 
+def _compute_edit_diff(file_path: str) -> dict:
+    """
+    Runs `git diff HEAD -- <file_path>` to capture what the user changed
+    relative to the last committed (agent-written) state.
+
+    Returns {"signal": "unknown"} on any failure — never raises.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "diff", "HEAD", "--", file_path],
+            capture_output=True, text=True, timeout=5,
+            cwd=os.path.dirname(os.path.abspath(file_path)) or "."
+        )
+        diff = result.stdout
+        if not diff:
+            return {"signal": "golden", "lines_added": 0, "lines_removed": 0, "edit_ratio": 0.0}
+
+        added   = sum(1 for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++"))
+        removed = sum(1 for l in diff.splitlines() if l.startswith("-") and not l.startswith("---"))
+        changed = added + removed
+
+        try:
+            total = sum(1 for _ in open(file_path))
+        except Exception:
+            total = max(changed, 1)
+
+        ratio = min(changed / max(total, 1), 1.0)
+
+        if ratio <= 0.10:
+            signal = "golden"
+        elif ratio <= 0.40:
+            signal = "moderate"
+        else:
+            signal = "heavy_rewrite"
+
+        return {
+            "signal":        signal,
+            "lines_added":   added,
+            "lines_removed": removed,
+            "edit_ratio":    round(ratio, 3),
+        }
+    except Exception:
+        return {"signal": "unknown"}
+
+
 def _cursor_map_event(event: str, payload: dict, ts: str) -> dict | None:
     """Convert a Cursor hook payload to an internal session log record."""
     if event == "afterFileEdit":
+        file_path = payload.get("file_path", "")
+        diff_summary = _compute_edit_diff(file_path)
         return {
             "kind":      "tool",
             "tool":      "Edit",
-            "input":     payload.get("file_path", ""),
+            "input":     file_path,
             "exit_code": 0,
+            "edit_diff": diff_summary,
             "idx":       0,
             "timestamp": ts,
         }
@@ -246,6 +294,72 @@ def save_state(session_id: str, state: dict) -> None:
     f.write_text(json.dumps(state, indent=2))
 
 
+def _compute_quality_signal(session_file: Path) -> str:
+    """
+    Heuristic quality score for a finalized session.
+    Scans the already-formatted session markdown for signal strings.
+    Returns "high" | "medium" | "low".
+    """
+    try:
+        text = session_file.read_text()
+    except Exception:
+        return "medium"
+
+    lines = text.splitlines()
+    success_count    = 0
+    failure_count    = 0
+    explicit_good    = 0
+    explicit_bad     = 0
+    golden_count     = 0
+    heavy_count      = 0
+    correction_count = 0
+
+    prev_actor = None
+    for line in lines:
+        ll = line.strip().lower()
+        if ll.startswith("> exit code:"):
+            code_str = ll.split(":", 1)[1].strip()
+            try:
+                code = int(code_str)
+                if code == 0:
+                    success_count += 1
+                else:
+                    failure_count += 1
+            except ValueError:
+                pass
+        if "[feedback:good]" in ll:
+            explicit_good += 1
+        if "[feedback:bad]" in ll or "[feedback:wrong]" in ll:
+            explicit_bad += 1
+        if "edit_diff: golden" in ll:
+            golden_count += 1
+        if "edit_diff: heavy_rewrite" in ll:
+            heavy_count += 1
+        # Count user turns immediately following agent turns as correction proxy
+        if "actor: agent" in ll:
+            prev_actor = "agent"
+        elif "actor: user" in ll:
+            if prev_actor == "agent":
+                correction_count += 1
+            prev_actor = "user"
+
+    base_ratio         = success_count / max(1, success_count + failure_count)
+    correction_penalty = min(correction_count, 5) / 5 * 0.30
+    score = (base_ratio
+             - correction_penalty
+             + explicit_good  * 0.15
+             - explicit_bad   * 0.20
+             + golden_count   * 0.10
+             - heavy_count    * 0.15)
+    score = max(0.0, min(1.0, score))
+
+    if score >= 0.75:
+        return "high"
+    if score >= 0.45:
+        return "medium"
+    return "low"
+
+
 def finalize(session_id: str, state: dict) -> None:
     state["complete"] = True
     save_state(session_id, state)
@@ -254,6 +368,12 @@ def finalize(session_id: str, state: dict) -> None:
         if path.exists():
             txt = path.read_text()
             txt = txt.replace("complete: false", "complete: true", 1)
+            try:
+                quality = _compute_quality_signal(path)
+                # Insert quality_signal into frontmatter before the closing ---
+                txt = txt.replace("complete: true\n---", f"complete: true\nquality_signal: {quality}\n---", 1)
+            except Exception:
+                pass
             path.write_text(txt)
 
 
@@ -337,7 +457,15 @@ def map_entries(raw: list[tuple[int, dict]]) -> list[dict]:
 
 
 def _user_record(text: str, idx: int, ts: str) -> dict:
-    return {"kind": "user", "text": text.strip(), "idx": idx, "timestamp": ts}
+    record = {"kind": "user", "text": text.strip(), "idx": idx, "timestamp": ts}
+    stripped = text.strip().lower()
+    if stripped.startswith("/good"):
+        record["feedback_tag"] = "good"
+    elif stripped.startswith("/bad"):
+        record["feedback_tag"] = "bad"
+    elif stripped.startswith("/wrong"):
+        record["feedback_tag"] = "wrong"
+    return record
 
 
 def _agent_record(text: str, idx: int, ts: str) -> dict:
@@ -460,6 +588,8 @@ def format_records(records: list[dict]) -> str:
             lines = [header, "Actor: User"]
             for line in r["text"].splitlines():
                 lines.append(f"> {line}")
+            if r.get("feedback_tag"):
+                lines.append(f"> [FEEDBACK:{r['feedback_tag'].upper()}]")
 
         elif r["kind"] == "agent":
             lines = [header, "Actor: Agent"]
@@ -488,6 +618,9 @@ def format_records(records: list[dict]) -> str:
                 ]
                 if code != "?":
                     lines.append(f"> exit code: {code}")
+            if diff := r.get("edit_diff"):
+                lines.append(f"> edit_diff: {diff.get('signal', 'unknown')} "
+                             f"(ratio={diff.get('edit_ratio', '?')})")
         else:
             continue
 

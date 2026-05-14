@@ -78,7 +78,9 @@ fd '^FACT-007.*\.md$' "${KNOWLEDGE_DIR}/facts" -d 1
    ID="FACT-$(printf '%03d' $((${NEXT:-0} + 1)))"
    FILE="${KNOWLEDGE_DIR}/facts/${ID}-<slug>.md"
    ```
-   Write `$FILE` using the format in `references/formats.md`.
+   Write `$FILE` using the format in `references/formats.md`. When `confidence:
+   validated`, set `validated_at` equal to `created`. Omit `validated_at` when
+   `confidence: asserted`.
 
 3. Index:
    ```bash
