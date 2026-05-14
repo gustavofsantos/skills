@@ -139,7 +139,8 @@ def _extract_prompt(payload: dict) -> str:
 
 
 def _emit_claude(context: str) -> None:
-    print(json.dumps({"hookSpecificOutput": {"additionalContext": context}}))
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
+                                             "additionalContext": context}}))
 
 
 def _emit_cursor(context: str) -> None:
