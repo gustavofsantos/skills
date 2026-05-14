@@ -27,7 +27,7 @@ from pathlib import Path
 
 ENGINEERING_DIR = Path.home() / "engineering"
 QMD_TIMEOUT     = 6      # seconds — must stay well under Claude Code hook deadline
-MIN_SCORE       = "0.50"
+MIN_SCORE       = "0.75"
 MAX_RESULTS     = "5"
 MAX_KEYWORDS    = 10
 
@@ -137,32 +137,68 @@ def _parse_paths(output: str) -> list[str]:
     return paths
 
 
+# ─── Agent adapters ───────────────────────────────────────────────────────────
+
+def _extract_prompt(payload: dict) -> str:
+    """Return the user's prompt text from the hook payload."""
+    for key in ("prompt", "user_prompt", "message", "query"):
+        val = payload.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return ""
+
+
+def _emit_claude(context: str) -> None:
+    print(json.dumps({"hookSpecificOutput": {"additionalContext": context}}))
+
+
+def _emit_cursor(context: str) -> None:
+    # Cursor permission-gating hooks must include 'permission: allow'.
+    print(json.dumps({"permission": "allow", "additionalContext": context}))
+
+
+def _allow_cursor() -> None:
+    """Emit the bare Cursor permission grant used on every no-op exit path."""
+    print(json.dumps({"permission": "allow"}))
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--agent", choices=["claude", "cursor"], default="claude",
+                        help="Agent runtime whose hook payload format to expect")
+    args = parser.parse_args()
+
     try:
         payload = json.load(sys.stdin)
     except Exception:
+        if args.agent == "cursor":
+            _allow_cursor()
         sys.exit(0)
 
-    # Claude Code sends the prompt under "prompt"; guard against missing key.
-    prompt = (payload.get("prompt") or "").strip()
-    if not prompt:
-        sys.exit(0)
+    prompt = _extract_prompt(payload)
 
-    if not ENGINEERING_DIR.exists():
+    if not prompt or not ENGINEERING_DIR.exists():
+        if args.agent == "cursor":
+            _allow_cursor()
         sys.exit(0)
 
     keywords = extract_keywords(prompt)
     if not keywords:
+        if args.agent == "cursor":
+            _allow_cursor()
         sys.exit(0)
 
     paths = query_knowledge(" ".join(keywords))
     if not paths:
+        if args.agent == "cursor":
+            _allow_cursor()
         sys.exit(0)
 
-    bullets    = "\n".join(f"  - {p}" for p in paths)
-    key_label  = ", ".join(keywords[:5])
+    bullets   = "\n".join(f"  - {p}" for p in paths)
+    key_label = ", ".join(keywords[:5])
     context = (
         f"[Memory probe — keywords: {key_label}]\n"
         f"These knowledge files scored above threshold for this prompt:\n"
@@ -170,7 +206,10 @@ def main() -> None:
         f"Read them if they bear on the request before responding."
     )
 
-    print(json.dumps({"hookSpecificOutput": {"additionalContext": context}}))
+    if args.agent == "cursor":
+        _emit_cursor(context)
+    else:
+        _emit_claude(context)
 
 
 if __name__ == "__main__":
