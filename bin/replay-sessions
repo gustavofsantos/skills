@@ -15,7 +15,7 @@ set -euo pipefail
 
 PARSE_SCRIPT="$(cd "$(dirname "$0")/.." && pwd)/hooks/parse_session.py"
 CLAUDE_DIR="$HOME/.claude"
-SESSIONS_DIR="$HOME/engineering/sessions"
+SESSIONS_DIR="${PERSONAL_SESSIONS_DIR:-$HOME/.claude/custom-sessions}"
 LIMIT=0
 DRY_RUN=false
 
