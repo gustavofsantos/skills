@@ -4,7 +4,6 @@ description: >
   traverses the codebase, produces behavioral claims anchored to file:line evidence,
   and returns a structured report with high-signal files for the main agent to load.
   Optionally writes a spike file when the prompt requests it.
-model: claude-opus-4-7
 allowed-tools: Bash(rg:*) Bash(fd:*) Bash(git:*) Bash(qmd:*) Bash(date:*) Read Write
 ---
 

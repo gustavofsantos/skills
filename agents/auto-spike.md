@@ -3,7 +3,6 @@ description: >
   Autonomous spike-extension subagent. Selects up to 4 spikes with open threads,
   traverses the relevant code for one thread per spike, writes child spikes, updates
   parent SCOPE/DYNAMIC records, and commits. Runs headless on a schedule or on demand.
-model: claude-opus-4-7
 allowed-tools: Bash(fd:*) Bash(rg:*) Bash(git:*) Bash(qmd:*) Bash(date:*) Bash(shuf:*) Bash(sort:*) Bash(wc:*) Bash(find:*) Read Write Edit
 ---
 

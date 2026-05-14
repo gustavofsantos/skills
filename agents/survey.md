@@ -3,7 +3,6 @@ description: >
   Read-only survey subagent. Systematically discovers an unfamiliar repository
   across Identity, Configuration, and Integration zones. Returns a structured
   report with findings, fact candidates, and high-signal files for the main agent.
-model: claude-opus-4-7
 allowed-tools: Bash(rg:*) Bash(fd:*) Bash(git:*) Bash(qmd:*) Read
 ---
 

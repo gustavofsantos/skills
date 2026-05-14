@@ -4,7 +4,6 @@ description: >
   dream run, mines signal across sessions, cross-references the engineering
   vault, and writes facts and issue updates directly. Runs headless on a
   schedule or on demand via the dream skill.
-model: claude-opus-4-5
 allowed-tools: Bash(fd:*) Bash(rg:*) Bash(git:*) Bash(qmd:*) Bash(date:*) Read Write Edit
 ---
 
