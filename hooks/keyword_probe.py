@@ -137,6 +137,47 @@ def _parse_paths(output: str) -> list[str]:
     return paths
 
 
+# ─── Runtime detection ────────────────────────────────────────────────────────
+
+# Cursor hook events that require a permission response on stdout.
+_CURSOR_PERMISSION_EVENTS = {
+    "beforeSubmitPrompt",
+    "beforeShellExecution",
+    "beforeMCPExecution",
+    "beforeReadFile",
+}
+
+
+def _detect_runtime(payload: dict) -> str:
+    """Return 'claude' or 'cursor' based on the hook payload shape."""
+    event = payload.get("hook_event_name", "")
+    # Claude Code uses 'UserPromptSubmit'; Cursor uses 'beforeSubmitPrompt'.
+    if event == "UserPromptSubmit":
+        return "claude"
+    if event in _CURSOR_PERMISSION_EVENTS or "workspace_roots" in payload:
+        return "cursor"
+    # Fallback: if 'session_id' is present it's likely Claude Code.
+    return "claude" if "session_id" in payload else "cursor"
+
+
+def _extract_prompt(payload: dict) -> str:
+    """Return the user's prompt text regardless of host-specific key name."""
+    for key in ("prompt", "user_prompt", "message", "query"):
+        val = payload.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return ""
+
+
+def _emit(context: str, runtime: str) -> None:
+    """Print the host-appropriate JSON response."""
+    if runtime == "cursor":
+        # Cursor permission hooks must include 'permission: allow'.
+        print(json.dumps({"permission": "allow", "additionalContext": context}))
+    else:
+        print(json.dumps({"hookSpecificOutput": {"additionalContext": context}}))
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -145,24 +186,34 @@ def main() -> None:
     except Exception:
         sys.exit(0)
 
-    # Claude Code sends the prompt under "prompt"; guard against missing key.
-    prompt = (payload.get("prompt") or "").strip()
+    runtime = _detect_runtime(payload)
+    prompt  = _extract_prompt(payload)
+
     if not prompt:
+        # For Cursor permission hooks we must always emit allow, even on no-op.
+        if runtime == "cursor" and payload.get("hook_event_name") in _CURSOR_PERMISSION_EVENTS:
+            print(json.dumps({"permission": "allow"}))
         sys.exit(0)
 
     if not ENGINEERING_DIR.exists():
+        if runtime == "cursor" and payload.get("hook_event_name") in _CURSOR_PERMISSION_EVENTS:
+            print(json.dumps({"permission": "allow"}))
         sys.exit(0)
 
     keywords = extract_keywords(prompt)
     if not keywords:
+        if runtime == "cursor" and payload.get("hook_event_name") in _CURSOR_PERMISSION_EVENTS:
+            print(json.dumps({"permission": "allow"}))
         sys.exit(0)
 
     paths = query_knowledge(" ".join(keywords))
     if not paths:
+        if runtime == "cursor" and payload.get("hook_event_name") in _CURSOR_PERMISSION_EVENTS:
+            print(json.dumps({"permission": "allow"}))
         sys.exit(0)
 
-    bullets    = "\n".join(f"  - {p}" for p in paths)
-    key_label  = ", ".join(keywords[:5])
+    bullets   = "\n".join(f"  - {p}" for p in paths)
+    key_label = ", ".join(keywords[:5])
     context = (
         f"[Memory probe — keywords: {key_label}]\n"
         f"These knowledge files scored above threshold for this prompt:\n"
@@ -170,7 +221,7 @@ def main() -> None:
         f"Read them if they bear on the request before responding."
     )
 
-    print(json.dumps({"hookSpecificOutput": {"additionalContext": context}}))
+    _emit(context, runtime)
 
 
 if __name__ == "__main__":
