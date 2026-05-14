@@ -140,7 +140,7 @@ def _parse_paths(output: str) -> list[str]:
 # ─── Agent adapters ───────────────────────────────────────────────────────────
 
 def _extract_prompt(payload: dict) -> str:
-    """Return the user's prompt text; Cursor and Claude Code use different keys."""
+    """Return the user's prompt text from the hook payload."""
     for key in ("prompt", "user_prompt", "message", "query"):
         val = payload.get(key)
         if isinstance(val, str) and val.strip():
