@@ -28,11 +28,23 @@ Load spike inventory. Find all spikes with open threads:
 fd -t f -e md . ~/engineering/spikes -d 1 2>/dev/null | grep -v '/archive/'
 ```
 
-For each spike file, check for open signals. A spike has open threads when any of
-these are present:
+For each spike file, check for open signals. A thread is **open** if any of these hold:
+
 - A line matching `[SCOPE-` that does NOT contain `→ investigated`
 - A line matching `[DYNAMIC-` that does NOT contain `→ investigated`
+- A line matching `[SCOPE-` or `[DYNAMIC-` that DOES contain `→ investigated` but whose
+  `Date:` field (the next line) is older than 60 days — re-eligible for re-investigation.
+  Records without a `Date:` field are treated as unknown age and are always re-eligible.
 - A non-empty `## Open questions` section (has content lines after the header)
+
+To check 60-day staleness for a `→ investigated` record, read the `Date:` line following
+it and compare with today:
+```bash
+RECORD_DATE="YYYY-MM-DD"   # extracted from the Date: line
+CUTOFF=$(date -u -d "60 days ago" +%Y-%m-%d 2>/dev/null \
+         || date -u -v-60d +%Y-%m-%d 2>/dev/null || echo "")
+# stale when RECORD_DATE < CUTOFF (or CUTOFF is empty — treat as stale)
+```
 
 Build the **candidate list**: spike paths where at least one open signal exists.
 
@@ -123,8 +135,19 @@ traversal protocol:
 
 - Read code, understand behavior not syntax.
 - Produce `[A{n}]` claims anchored to `file:line`.
-- Note `[SCOPE-{n}]` for branches not followed (depth limit: 5 levels).
-- Note `[DYNAMIC-{n}]` for unresolvable dynamic dispatch.
+- Note `[SCOPE-{n}]` for branches not followed (depth limit: 5 levels). Include a
+  `Date:` line on the next line with today's date (`date -u +%Y-%m-%d`):
+  ```
+  [SCOPE-{n}] Did not traverse: <branch or function>
+               Reason: <out of scope | depth limit | separate question>
+               Date: YYYY-MM-DD
+  ```
+- Note `[DYNAMIC-{n}]` for unresolvable dynamic dispatch. Include a `Date:` line:
+  ```
+  [DYNAMIC-{n}] Dynamic dispatch at: <location>
+                 Cannot resolve statically.
+                 Date: YYYY-MM-DD
+  ```
 - Depth limit: 5 call levels from each entry point.
 - Terminate at third-party libs, leaf nodes, external systems — this is expected.
 
@@ -182,11 +205,21 @@ Omit `## Ignored scope`, `## Dynamic paths` sections when no records exist.
 
 In the **parent spike file**, find the processed thread record and update it in-place:
 
-- For `[SCOPE-n]`: replace the line content to append `→ investigated, see [[NNN-slug]]`
+- For `[SCOPE-n]` (fresh investigation): replace the line content to append
+  `→ investigated, see [[NNN-slug]]` and include the `Date:` line:
   ```
   [SCOPE-3] Did not traverse: auth module → investigated, see [[042-auth-module-dispatch]]
+             Date: YYYY-MM-DD
   ```
-- For `[DYNAMIC-n]`: same pattern.
+- For `[SCOPE-n]` (re-investigation of a previously-closed thread): replace the old
+  resolution marker with the new one:
+  ```
+  [SCOPE-3] Did not traverse: auth module → re-investigated YYYY-MM-DD, see [[NNN-slug]]
+             Date: YYYY-MM-DD
+  ```
+  The child spike's `## Answer` section should open with:
+  "Re-investigation of [SCOPE-n] from spike NNN (originally closed YYYY-MM-DD)."
+- For `[DYNAMIC-n]`: same patterns as SCOPE-n above.
 - For `## Open questions` item: append `→ see [[NNN-slug]]` to the item line.
 
 Use `Edit` with the old and new line text. If the exact line cannot be matched

@@ -9,6 +9,7 @@ title: "Short label — what this fact says"
 confidence: asserted | validated
 created: YYYY-MM-DD
 confirmed: YYYY-MM-DD
+validated_at: YYYY-MM-DD   # date last confirmed against live code
 tags: [tag1, tag2]
 refs:
   spike:
@@ -38,6 +39,11 @@ Optional. Caveats, edge cases, conditions under which this might not hold.
 **Confidence levels:**
 - `asserted` — stated by the human as external truth. Not yet verified in code.
 - `validated` — confirmed through traversal or testing. Anchored to evidence.
+
+**`validated_at`** — date this fact was last confirmed against live code. Set when
+confidence is upgraded to `validated`, and updated whenever a dead-reckoning traversal
+re-confirms the claim. Facts with `confidence: validated` and `validated_at` older than
+90 days are considered stale by the dream subagent.
 
 ---
 
