@@ -739,9 +739,11 @@ def get_or_create_session_file(
         if p.exists():
             return p
 
-    date_str     = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    short_id     = session_id[:8]
-    session_file = SESSIONS_DIR / f"{date_str}-{short_id}.md"
+    now          = datetime.now(timezone.utc)
+    date_str     = now.strftime("%Y-%m-%d")
+    time_str     = now.strftime("%H%M")
+    tail_id      = session_id.replace("-", "")[-8:]
+    session_file = SESSIONS_DIR / f"{date_str}-{time_str}-{tail_id}.md"
 
     frontmatter = (
         f"---\n"
