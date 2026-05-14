@@ -83,7 +83,8 @@ def query_knowledge(query: str) -> list[str]:
     """Return file paths that score above MIN_SCORE for the query."""
     try:
         r = subprocess.run(
-            ["qmd", "query", query, "--min-score", MIN_SCORE, "-n", MAX_RESULTS],
+            ["qmd", "query", query, "-c", "engineering",
+             "--min-score", MIN_SCORE, "-n", MAX_RESULTS, "--json"],
             capture_output=True, text=True, timeout=QMD_TIMEOUT,
         )
     except FileNotFoundError:
@@ -94,45 +95,32 @@ def query_knowledge(query: str) -> list[str]:
     if r.returncode != 0:
         return []
 
-    return _parse_paths(r.stdout)
+    return _parse_json_results(r.stdout)
 
 
-def _parse_paths(output: str) -> list[str]:
-    """Extract file paths from qmd stdout, filtering archive entries."""
-    paths, seen = [], set()
-    home = str(Path.home())
+_QMD_URI_PREFIX = "qmd://engineering/"
 
-    for line in output.splitlines():
-        line = line.strip()
-        if not line:
+
+def _parse_json_results(output: str) -> list[str]:
+    """Parse qmd --json output into absolute file paths, filtering archive entries."""
+    try:
+        results = json.loads(output)
+    except json.JSONDecodeError:
+        return []
+
+    if not isinstance(results, list):
+        return []
+
+    paths = []
+    for item in results:
+        uri = item.get("file", "")
+        if not uri.startswith(_QMD_URI_PREFIX):
             continue
-
-        # file:/// absolute URI
-        if line.startswith("file:///"):
-            candidate = line[7:]
-        # bare absolute path ending in .md
-        elif line.startswith("/") and ".md" in line:
-            candidate = line.split()[0]  # drop trailing score annotation
-        # ~/… path
-        elif line.startswith("~/"):
-            candidate = line.replace("~/", home + "/", 1).split()[0]
-        else:
-            # mixed line — try to pull out any path segment
-            m = re.search(r'((?:/|~/)[^\s]+\.md)', line)
-            if not m:
-                continue
-            candidate = m.group(1).replace("~/", home + "/", 1)
-
-        # strip any trailing annotation like " (score: 0.82)"
-        candidate = candidate.split(" (")[0].rstrip(",;")
-
-        if "/archive/" in candidate:
+        abs_path = str(ENGINEERING_DIR / uri[len(_QMD_URI_PREFIX):])
+        if "/archive/" in abs_path:
             continue
-        if candidate in seen:
-            continue
-        if Path(candidate).exists():
-            seen.add(candidate)
-            paths.append(candidate)
+        if Path(abs_path).exists():
+            paths.append(abs_path)
 
     return paths
 
