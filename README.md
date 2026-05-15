@@ -1,8 +1,8 @@
 # Skills
 
-A personal Claude Code plugin containing the skills, commands, and agents Gustavo uses when pairing with AI as an engineer.
+A personal Claude Code and Gemini CLI plugin containing the skills, commands, and agents Gustavo uses when pairing with AI as an engineer.
 
-Skills are Markdown instruction files that Claude loads on demand. They encode repeatable protocols — code review, TDD cycles, knowledge management, daily workflow — so the same approach is applied consistently across sessions.
+Skills are Markdown instruction files that Claude and Gemini load on demand. They encode repeatable protocols — code review, TDD cycles, knowledge management, daily workflow — so the same approach is applied consistently across sessions.
 
 ## Installation
 
@@ -22,6 +22,20 @@ claude plugin marketplace update gustavofsantos
 ```
 
 Skills are namespaced as `/gustavofsantos:<skill-name>` (e.g. `/gustavofsantos:workflow`).
+
+### Gemini CLI
+
+Install locally by linking the repository as a Gemini extension:
+
+```bash
+gemini extensions link .
+```
+
+This will register the extension and all its bundled skills. You can also run the local installation script to symlink skills and agents into your home directory:
+
+```bash
+bash .scripts/install.sh
+```
 
 ### npx skills (alternative)
 

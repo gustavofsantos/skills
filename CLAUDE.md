@@ -1,12 +1,12 @@
-# CLAUDE.md
+# CLAUDE.md & GEMINI.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) and Gemini CLI when working with code in this repository.
 
 ## What this repo is
 
-A Claude Code plugin containing Gustavo's personal set of skills, commands, and agents for AI-assisted engineering. Skills are installed as symlinks into `~/.claude/skills/` and `~/.agents/skills/`, and copied into `~/.cursor/skills/` (symlinks are broken in Cursor for global skills).
+A personal set of skills, commands, and agents for AI-assisted engineering. Skills are installed as symlinks into `~/.claude/skills/`, `~/.agents/skills/`, and `~/.gemini/skills/`, and copied into `~/.cursor/skills/`.
 
-Plugin metadata lives in `.claude-plugin/plugin.json`.
+Plugin metadata lives in `.claude-plugin/plugin.json` (Claude) and `gemini-extension.json` (Gemini).
 
 ## Remote environment setup
 
@@ -16,15 +16,14 @@ When working in a remote or ephemeral environment (e.g. a cloud agent, CI worktr
 bash .scripts/setup-hooks.sh
 ```
 
-This installs git hooks from `.scripts/hooks/` into `.git/hooks/`. Without it, the pre-commit hook that auto-bumps the plugin version will not run and commits may go out with a stale version number.
+This installs git hooks from `.scripts/hooks/` into `.git/hooks/`.
 
 ## Installing skills
 
 ```bash
-npx skills add ./ -g
+npx skills add ./ -g   # Claude / Agent Skills
+bash .scripts/install.sh  # Cursor / Gemini CLI
 ```
-
-Uses the `npx skills` package to install globally. The package discovers skills via the `skills/` directory and the `.claude-plugin/plugin.json` manifest, then symlinks them into `~/.claude/skills/`, `~/.agents/skills/`, etc.
 
 ## Repository layout
 
@@ -35,23 +34,14 @@ skills/             ← one subdirectory per skill
     scripts/        ← optional Python scripts invoked by the skill
     references/     ← optional reference documents the skill reads
     examples/       ← optional worked examples
-agents/             ← custom subagents (one .md file per subagent)
-  deep-review.md    ← read-only code review subagent (high effort, opus model)
-  dead-reckoning.md ← read-only code investigation subagent
-  survey.md         ← read-only repository discovery subagent
-  dream.md          ← memory consolidation subagent (writes facts and issue updates)
+agents/             ← custom subagents for Claude Code (one .md file per subagent)
+.gemini/agents/     ← custom subagents for Gemini CLI (frontmatter adapted for Gemini)
 commands/           ← custom slash commands (currently empty placeholder)
 hooks/              ← plugin-level Claude Code hooks (session capture)
-  hooks.json        ← hook config (PostToolUse + Stop)
-  parse_session.py  ← reads JSONL transcript entries and appends to session log
 .claude-plugin/
-  plugin.json       ← plugin name, version, author metadata
-  marketplace.json  ← marketplace listing
-.scripts/
-  install.sh        ← installs all skills to ~/.claude/skills et al.
-  setup-hooks.sh    ← copies dev hooks from .scripts/hooks/ into .git/hooks/
-  hooks/
-    pre-commit      ← auto-bumps plugin patch version on every commit
+  plugin.json       ← Claude plugin metadata
+gemini-extension.json ← Gemini extension metadata
+GEMINI.md           ← Gemini-specific instructions
 ```
 
 ## Skill format
@@ -64,19 +54,31 @@ description: >
   One sentence on what the skill does. No trigger phrases here.
 when_to_use: >
   Trigger phrases (Portuguese + English) and example requests that activate this skill.
-argument-hint: [arg1] [arg2]   # only when arguments are meaningful
-arguments: [arg1, arg2]        # mirror argument-hint when used
-allowed-tools: <space-separated>   # pre-approve tools to kill permission prompts
-effort: high                   # only for reasoning-heavy skills
-user-invocable: false          # only for reference-only skills not shown in /
 ---
-
-# Skill Title
-
-Instructions for the AI...
 ```
 
-`description` answers "what does it do" in one sentence. `when_to_use` is the trigger surface — include canonical phrases and exclusion cases. Drop fields that don't apply. The `name:` field defaults to the directory name — do not include it.
+Both Claude Code and Gemini CLI follow the **Agent Skills** standard.
+
+## Tool mapping
+
+When following instructions in `SKILL.md` files, map tool names as follows for Gemini CLI:
+
+| Claude Tool | Gemini CLI Equivalent |
+| :--- | :--- |
+| `Read` | `read_file`, `read_many_files`, `list_directory` |
+| `Write` | `write_file` |
+| `Edit` | `replace` |
+| `Bash` | `run_shell_command` |
+| `fd` | `glob` |
+| `rg` | `grep_search` |
+| `Agent` | `invoke_agent` or specific agent tool |
+
+## Subagent dispatch pattern
+
+Read-only, batch-style skills are dispatch shims.
+- **Claude:** uses the `Agent` tool with `subagent_type`.
+- **Gemini:** uses `invoke_agent` or calls the subagent tool directly (e.g., `dead_reckoning()`).
+- **Protocols:** Claude protocols live in `agents/`, Gemini protocols in `.gemini/agents/`.
 
 ## Skill conventions
 

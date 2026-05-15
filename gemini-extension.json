@@ -1,0 +1,6 @@
+{
+  "name": "gustavofsantos-skills",
+  "version": "1.0.62",
+  "description": "Personal Gemini CLI skills for AI-assisted engineering: TDD cycles, code review, knowledge management, and daily workflow orchestration.",
+  "contextFileName": "GEMINI.md"
+}

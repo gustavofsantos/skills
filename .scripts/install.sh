@@ -41,4 +41,23 @@ for event, suffix in [
 hooks_file.write_text(json.dumps(config, indent=2) + "\n")
 print(f"  wrote {hooks_file}")
 PYEOF
-echo "Cursor hooks installed. OK"
+echo "Installing local Cursor hooks... OK"
+
+echo "Installing local Gemini CLI files..."
+mkdir -p "$HOME/.gemini/skills/"
+mkdir -p "$HOME/.gemini/agents/"
+# Symlink skills
+for skill in "$PLUGIN_DIR/skills"/*; do
+  [ -d "$skill" ] || continue
+  name=$(basename "$skill")
+  ln -sfn "$skill" "$HOME/.gemini/skills/$name"
+done
+# Symlink Gemini-specific agents
+if [ -d "$PLUGIN_DIR/.gemini/agents" ]; then
+  for agent in "$PLUGIN_DIR/.gemini/agents"/*; do
+    [ -f "$agent" ] || continue
+    name=$(basename "$agent")
+    ln -sfn "$agent" "$HOME/.gemini/agents/$name"
+  done
+fi
+echo "Installing local Gemini CLI files... OK"
