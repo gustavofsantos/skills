@@ -16,6 +16,8 @@ allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(qmd:*) Bash(git:*) Bas
 The knowledge library is the long-term memory of the system. Queried before execution,
 written whenever a validated fact is discovered.
 
+For canonical file formats (frontmatter + sections), read `references/formats.md`.
+
 ## Resolve storage
 
 Run at the start of any operation that reads or writes the knowledge base:
@@ -31,25 +33,6 @@ else
 fi
 mkdir -p "${KNOWLEDGE_DIR}/facts" "${KNOWLEDGE_DIR}/spikes"
 ```
-
-## Storage layout
-
-```
-$KNOWLEDGE_DIR/
-  facts/      FACT-001-auth-token-refresh-window.md
-  spikes/     001-auth-investigation.md
-  terms/
-    financeiro/   TERM-001-ciclo-de-faturamento.md
-```
-
-Facts are global to the knowledge root. Spikes are produced by `dead-reckoning`.
-Terms are scoped by business domain.
-
-For canonical file formats (frontmatter + sections), read `references/formats.md`.
-
-**Confidence levels:**
-- `asserted` — stated as external truth, not yet verified in code
-- `validated` — confirmed through traversal or testing, anchored to evidence
 
 ---
 
@@ -78,14 +61,10 @@ fd '^FACT-007.*\.md$' "${KNOWLEDGE_DIR}/facts" -d 1
    ID="FACT-$(printf '%03d' $((${NEXT:-0} + 1)))"
    FILE="${KNOWLEDGE_DIR}/facts/${ID}-<slug>.md"
    ```
-   Write `$FILE` using the format in `references/formats.md`. When `confidence:
-   validated`, set `validated_at` equal to `created`. Omit `validated_at` when
-   `confidence: asserted`.
+   Write `$FILE` using the format in `references/formats.md`. When `confidence: validated`,
+   set `validated_at` equal to `created`. Omit `validated_at` when `confidence: asserted`.
 
-3. Index:
-   ```bash
-   qmd update && qmd embed
-   ```
+3. Index: `qmd update && qmd embed`
 
 4. Add the wiki link to the originating issue's `### Facts` section.
 
@@ -129,7 +108,6 @@ Write using the term format in `references/formats.md`. Then `qmd update && qmd 
 
 **Facts vs. terms:** a fact is empirical — behavioral claim anchored to code.
 A term is normative — what a concept means in the business domain.
-The `## No código` section is only written when the code name diverges from the business name.
 
 ---
 

@@ -52,28 +52,28 @@ re-confirms the claim. Facts with `confidence: validated` and `validated_at` old
 ```markdown
 ---
 id: TERM-NNN
-term: "Nome do conceito"
-domain: financeiro
+term: "Concept name"
+domain: domain-name
 aliases: [alias1, alias2]
 ---
 
-## Definição
+## Definition
 
-## No código
+## In the code
 
-<!-- Só preencher se o nome no código divergir do nome de negócio. Omitir a seção caso contrário. -->
+<!-- Only fill when the code name diverges from the business name. Omit otherwise. -->
 
-## Não é
+## Is not
 
 ---
 
-## Referências
+## References
 
 - [[FACT-NNN-slug]]
 - [[TERM-NNN-slug]]
 ```
 
-The `## No código` section is optional. Include it only when the code name diverges from the business name. Omit the section entirely when names align.
+The `## In the code` section is optional. Include it only when the code name diverges from the business name. Omit the section entirely when names align.
 
 ---
 

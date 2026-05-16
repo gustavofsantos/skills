@@ -1,125 +1,91 @@
 ---
 description: >
-  Turns a raw problem or idea into a well-structured user story with acceptance criteria.
+  Shapes a raw idea into a user story, then breaks it into scoped development tasks.
 when_to_use: >
-  Use whenever the user describes a problem, feature request, or task they want to implement
-  and needs to turn it into a user story. Triggers on "quero implementar", "preciso de uma
-  história de usuário", "monta uma story para", "tenho um problema que", or any raw idea that
-  needs formalization before development begins. Always use before writing acceptance criteria,
-  defining scope, or initiating a development session.
+  Use whenever a raw idea needs to become a story, or a ready story needs to be broken into
+  tasks. Triggers on "quero implementar", "monta uma story", "tenho um problema que",
+  "quebra essa história em tasks", "define as tasks para", "como implementar essa história",
+  or any raw idea or ready story before development begins. Always use before starting
+  implementation.
 allowed-tools: Read Write Edit
 ---
- 
-# User Story Builder
- 
-Transforma um problema ou ideia bruta em uma user story bem definida, com critérios de aceitação claros,
-garantindo alinhamento completo entre o agente e o usuário antes de qualquer trabalho de desenvolvimento.
- 
+
+# User Story
+
+Two phases in sequence: **shape** a raw idea into a story, then **plan** it into tasks.
+
+Entry point:
+- Raw idea → start at Phase 1
+- Story already exists (has As/I want/So that + criteria) → skip to Phase 3
+
+Read [references/heuristics.md](references/heuristics.md) for quality signals and split heuristics.
+
 ---
- 
-## Protocolo
- 
-### Fase 1 — Entendimento do problema
- 
-Ao receber um problema ou ideia, **não** escreva a story imediatamente.
- 
-Primeiro, faça perguntas cirúrgicas para eliminar ambiguidade. O objetivo é chegar em:
- 
-1. **Quem** é o usuário real que se beneficia (papel/persona, não "o sistema")
-2. **O que** precisa ser feito — a ação concreta, não o mecanismo técnico
-3. **Por que** — o valor de negócio ou técnico que justifica o esforço
-4. **Quando está pronto** — o critério observável que indica conclusão
- 
-Regras para as perguntas:
-- Máximo 3 perguntas por rodada
-- Priorize as que desbloqueiam as outras
-- Se o "para que" (o porquê) não estiver claro, essa é sempre a primeira pergunta
-- Se o escopo parecer grande, pergunte sobre o menor slice que entrega valor
- 
-Exemplo de perguntas úteis:
-- "Qual é o resultado observável quando isso estiver funcionando?"
-- "Quem sofre hoje sem essa funcionalidade?"
-- "Existe uma versão menor disso que já entregaria valor?"
-- "O que está fora do escopo dessa story?"
- 
-Continue perguntando até ter clareza suficiente para escrever uma story que passe no critério INVEST
-(Independent, Negotiable, Valuable, Estimatable, Small, Testable).
- 
+
+## Phase 1 — Understand the problem
+
+Don't write the story yet. Ask surgical questions — max 3 per round, prioritize the ones
+that unblock the others — until you have:
+
+1. **Who** — the real user who benefits (role/persona, not "the system")
+2. **What** — the concrete action, not the technical mechanism
+3. **Why** — the business or technical value that justifies the effort
+4. **Done when** — the observable criterion that indicates completion
+
+If the "why" is unclear, that's always the first question.
+If scope seems large, ask for the smallest slice that delivers value.
+
+Present questions and wait for answers before continuing.
+
 ---
- 
-### Fase 2 — Draft da story
- 
-Com as respostas em mãos, escreva a story no template:
- 
+
+## Phase 2 — Draft the story
+
+Write the story:
+
 ```
-Como [tipo de usuário],
-quero [ação concreta e pequena],
-para que [resultado de negócio ou técnico mensurável].
+As a [user type],
+I want [concrete, small action],
+so that [measurable business or technical outcome].
+
+Acceptance criteria:
+- [ ] [observable condition]
 ```
- 
-Seguido dos critérios de aceitação:
- 
-```
-Critérios de aceitação:
-- [ ] [condição observável 1]
-- [ ] [condição observável 2]
-- [ ] [condição observável 3]
-```
- 
-Regras para os critérios:
-- Cada critério deve ser verificável sem ambiguidade
-- Sem critérios de implementação (como, não o quê)
-- Incluir explicitamente o que está **fora** do escopo se houver risco de expansão
-- Máximo de 5 critérios. Se precisar de mais, a story está grande demais — proponha split.
- 
+
+Rules: each criterion must be verifiable without ambiguity; no implementation criteria
+(how, not what); max 5 criteria — more means the story is too large, propose a split;
+include what's explicitly out of scope if there's risk of expansion.
+
+Present the draft and ask: "Does this story capture what you want? Is any criterion wrong, missing, or out of scope?"
+
+Iterate until confirmed. Then proceed to Phase 3.
+
 ---
- 
-### Fase 3 — Alinhamento
- 
-Após apresentar o draft, pergunte explicitamente:
- 
-> "Essa story captura o que você quer? Algum critério está errado, faltando ou além do escopo?"
- 
-Itere até o usuário confirmar que está alinhado. Só então a story está pronta.
- 
----
- 
-### Fase 4 — Saída final
- 
-Apresente a story confirmada em bloco formatado:
- 
+
+## Phase 3 — Decompose into tasks
+
+Confirm you have: As/I want/So that, acceptance criteria, and what's out of scope.
+If any is missing, ask before continuing.
+
+Break into atomic tasks (max 7; more means the story needs a split):
+- Independent unit of work with a verifiable result
+- Declare dependencies explicitly — order matters
+- "Excludes" is mandatory on every task
+
+Template per task:
+
 ```
-## História: [título curto]
- 
-Como [tipo de usuário],
-quero [ação],
-para que [valor].
- 
-### Critérios de aceitação
-- [ ] ...
-- [ ] ...
- 
-### Fora do escopo
-- ...
+### Task [N]: [short title]
+
+**Goal:** [one sentence]
+**Depends on:** [previous task / none]
+**Scope:**
+- Includes: [what will be touched]
+- Excludes: [what must NOT be touched]
+**Done when:**
+- [ ] [verifiable condition — max 3]
 ```
- 
----
- 
-## Heurísticas de qualidade
- 
-**A história está boa quando:**
-- O "para que" expressa valor real, não consequência técnica óbvia
-- Qualquer desenvolvedor lendo entende o que está pronto sem perguntar
-- Pode ser desenvolvida e entregue em uma sessão ou iteração curta
-- Os critérios de aceitação são testáveis manualmente ou com testes automatizados
- 
-**Sinais de que a história precisa de split:**
-- O "quero" contém "e" ou "ou"
-- Tem mais de 5 critérios de aceitação
-- O usuário hesita ao dizer se cabe em uma iteração
-- Há dependência implícita de outra história não escrita
- 
-**Sinais de que o "para que" está fraco:**
-- É uma consequência técnica ("para que o código fique mais limpo")
-- Repete o "quero" com outras palavras
-- Não mudaria nada se fosse removido
+
+Present all tasks and ask: "Does the breakdown make sense? Is any task too large, out of order, or missing?"
+
+Iterate until confirmed.

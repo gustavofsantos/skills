@@ -20,8 +20,7 @@ allowed-tools: Read Write Edit Bash(rg:*) Bash(fd:*) Bash(mv:*) Bash(git:*) Bash
 
 | Moment | Skill |
 |---|---|
-| Raw idea needs shaping | `user-story-builder` |
-| Issue needs tasks broken down | `user-story-planner` |
+| Raw idea needs shaping or story needs tasks | `user-story-builder` |
 | Objective is unclear or complex | `thinking-partner` |
 | Thinking session needs depth | `thinking-lenses` (offered by thinking-partner) |
 | Open questions remain before execution | `dead-reckoning` (dispatches subagent) |
