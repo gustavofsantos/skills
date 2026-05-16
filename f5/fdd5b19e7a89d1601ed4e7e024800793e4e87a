@@ -1,0 +1,33 @@
+skills/knowledge/SKILL.md
+  s_43f9d38df91c38::t_4138ae61c0437e 19-20,64-65,67
+skills/design-constraints/SKILL.md
+  s_43f9d38df91c38::t_3e15dd25ce8e4f 20-21,23,34-35,37-38,58-59
+skills/user-story-builder/SKILL.md
+  s_43f9d38df91c38::t_863e848a94fd7b 19,47-52,59,67,78-86,89
+  s_43f9d38df91c38::t_f0f4f2a1d4ed92 3,5-9,12-18,20-22,24-39,41-45,54-58,60-62,64-66,68-76,88,90-91
+skills/design-constraints/references/guide.md
+  s_43f9d38df91c38::t_55ab061d420225 1-63
+skills/knowledge/references/formats.md
+  s_43f9d38df91c38::t_beec29330ce6bd 55-56,60,62,64,66,70,76
+skills/workflow/SKILL.md
+  s_43f9d38df91c38::t_1244a20c672bad 23
+skills/user-story-builder/references/heuristics.md
+  s_43f9d38df91c38::t_3023a9143289c3 1-7,9-13,15-18,22-37
+  s_43f9d38df91c38::t_648134dabe3881 8,14,19-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f5fdd5b19e7a89d1601ed4e7e024800793e4e87a",
+  "prompts": {},
+  "sessions": {
+    "s_43f9d38df91c38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2ae91b02-e079-43bb-88df-78118086048b",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Gustavo Santos <gustavogustav54@gmail.com>"
+    }
+  }
+}
