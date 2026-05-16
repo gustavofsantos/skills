@@ -1,0 +1,23 @@
+README.md
+  s_43f9d38df91c38::t_7cf7f068b1d246 93
+  s_43f9d38df91c38::t_974e0581dbbfd7 132
+  s_43f9d38df91c38::t_e32c2d3323752c 64-86
+skills/setup/SKILL.md
+  s_43f9d38df91c38::t_fa932c0c0a72d3 1-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "4bbe7646a6d563eb1fcb991d8344271ca1e73a3f",
+  "prompts": {},
+  "sessions": {
+    "s_43f9d38df91c38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2ae91b02-e079-43bb-88df-78118086048b",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Gustavo Santos <gustavogustav54@gmail.com>"
+    }
+  }
+}
