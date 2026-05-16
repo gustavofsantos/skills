@@ -25,17 +25,13 @@ Skills are namespaced as `/gustavofsantos:<skill-name>` (e.g. `/gustavofsantos:w
 
 ### Gemini CLI
 
-Install locally by linking the repository as a Gemini extension:
+Install locally by linking the extension subdirectory:
 
 ```bash
-gemini extensions link .
+gemini extensions link .gemini-extension
 ```
 
-This will register the extension and all its bundled skills. You can also run the local installation script to symlink skills and agents into your home directory:
-
-```bash
-bash .scripts/install.sh
-```
+This will register the extension, its bundled agents, and all shared skills.
 
 ### npx skills (alternative)
 

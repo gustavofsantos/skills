@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) and Gemini CLI when 
 
 A personal set of skills, commands, and agents for AI-assisted engineering. Skills are installed as symlinks into `~/.claude/skills/`, `~/.agents/skills/`, and `~/.gemini/skills/`, and copied into `~/.cursor/skills/`.
 
-Plugin metadata lives in `.claude-plugin/plugin.json` (Claude) and `gemini-extension.json` (Gemini).
+Plugin metadata lives in `.claude-plugin/plugin.json` (Claude) and `.gemini-extension/gemini-extension.json` (Gemini).
 
 ## Remote environment setup
 
@@ -22,7 +22,7 @@ This installs git hooks from `.scripts/hooks/` into `.git/hooks/`.
 
 ```bash
 npx skills add ./ -g   # Claude / Agent Skills
-bash .scripts/install.sh  # Cursor / Gemini CLI
+gemini extensions link .gemini-extension  # Gemini CLI
 ```
 
 ## Repository layout
@@ -35,14 +35,17 @@ skills/             ← one subdirectory per skill
     references/     ← optional reference documents the skill reads
     examples/       ← optional worked examples
 agents/             ← custom subagents for Claude Code (one .md file per subagent)
-.gemini/agents/     ← custom subagents for Gemini CLI (frontmatter adapted for Gemini)
+.gemini-extension/
+  gemini-extension.json ← Gemini extension metadata
+  GEMINI.md         ← Gemini-specific instructions
+  agents/           ← custom subagents for Gemini CLI (frontmatter adapted for Gemini)
+  skills/           ← symlink to ../skills/
 commands/           ← custom slash commands (currently empty placeholder)
 hooks/              ← plugin-level Claude Code hooks (session capture)
 .claude-plugin/
   plugin.json       ← Claude plugin metadata
-gemini-extension.json ← Gemini extension metadata
-GEMINI.md           ← Gemini-specific instructions
 ```
+
 
 ## Skill format
 

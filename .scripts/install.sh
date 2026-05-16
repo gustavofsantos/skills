@@ -53,8 +53,8 @@ for skill in "$PLUGIN_DIR/skills"/*; do
   ln -sfn "$skill" "$HOME/.gemini/skills/$name"
 done
 # Symlink Gemini-specific agents
-if [ -d "$PLUGIN_DIR/.gemini/agents" ]; then
-  for agent in "$PLUGIN_DIR/.gemini/agents"/*; do
+if [ -d "$PLUGIN_DIR/.gemini-extension/agents" ]; then
+  for agent in "$PLUGIN_DIR/.gemini-extension/agents"/*; do
     [ -f "$agent" ] || continue
     name=$(basename "$agent")
     ln -sfn "$agent" "$HOME/.gemini/agents/$name"
