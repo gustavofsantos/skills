@@ -61,12 +61,36 @@ npx skills update -g        # pull latest versions
 npx skills remove -g        # uninstall
 ```
 
+## Getting started
+
+After installing, run the setup skill once in your project:
+
+```
+/setup
+```
+
+or, if installed via the marketplace:
+
+```
+/gustavofsantos:setup
+```
+
+This will:
+1. Create the engineering vault at `~/engineering/` with the right directory structure
+2. Survey the current repository and extract what it finds into facts
+3. Orient you on which skills are most relevant for your project
+
+From there, use `/workflow` to start working on features and bugs, `/dead-reckoning` to investigate specific questions, and `/thinking-partner` to think through problems before coding.
+
+---
+
 ## Skills
 
 ### Orchestration
 
 | Skill | Description |
 |---|---|
+| [setup](skills/setup/SKILL.md) | One-time onboarding — bootstraps the engineering vault, surveys the current project, promotes findings to facts, and orients the user on what to do next. |
 | [workflow](skills/workflow/SKILL.md) | Protocol for managing daily engineering work — the orchestrator that coordinates all other skills across planning, execution, and review phases. |
 
 ### Thinking & Design
@@ -105,8 +129,7 @@ npx skills remove -g        # uninstall
 
 | Skill | Description |
 |---|---|
-| [user-story-builder](skills/user-story-builder/SKILL.md) | Turns a raw problem or idea into a well-structured user story with acceptance criteria. |
-| [user-story-planner](skills/user-story-planner/SKILL.md) | Breaks a ready user story into scoped development tasks with clear done criteria for agent execution. |
+| [user-story-builder](skills/user-story-builder/SKILL.md) | Shapes a raw idea into a user story, then breaks it into scoped development tasks. |
 
 ### Integrations
 
